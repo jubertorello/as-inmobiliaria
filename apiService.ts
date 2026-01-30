@@ -1,73 +1,132 @@
 import { Property, LandingContent, PropertyStatus } from './types';
-import { INITIAL_PROPERTIES, INITIAL_LANDING_CONTENT } from './constants';
-
-// Simulación de latencia de red (500ms - 1s)
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+import { INITIAL_LANDING_CONTENT } from './constants';
+import { supabase } from './src/integrations/supabase/client';
 
 const STORAGE_KEYS = {
-  PROPERTIES: 'as_properties',
   LANDING: 'as_landing',
-  // ADMIN: 'as_admin' // Removed, now handled by Supabase
 };
 
+type PropertyRow = {
+  id: string;
+  title: string;
+  description: string;
+  price: string | number | null;
+  currency: 'USD' | 'ARS';
+  type: string;
+  operation: string;
+  location: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  area: string | number;
+  images: string[];
+  status: string;
+  featured: boolean;
+};
+
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const mapRowToProperty = (row: PropertyRow): Property => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  price: row.price === null ? null : typeof row.price === 'string' ? Number(row.price) : row.price,
+  currency: row.currency,
+  type: row.type as any,
+  operation: row.operation as any,
+  location: row.location,
+  bedrooms: row.bedrooms ?? undefined,
+  bathrooms: row.bathrooms ?? undefined,
+  area: typeof row.area === 'string' ? Number(row.area) : row.area,
+  images: row.images || [],
+  status: row.status as PropertyStatus,
+  featured: Boolean(row.featured),
+});
+
+const mapPropertyToRow = (property: Property) => ({
+  title: property.title,
+  description: property.description,
+  price: property.price ?? null,
+  currency: property.currency,
+  type: property.type,
+  operation: property.operation,
+  location: property.location,
+  bedrooms: property.bedrooms ?? null,
+  bathrooms: property.bathrooms ?? null,
+  area: property.area,
+  images: property.images || [],
+  status: property.status,
+  featured: property.featured,
+});
+
 export const apiService = {
-  // --- PROPERTIES ---
+  // --- PROPERTIES (Supabase) ---
   async getProperties(): Promise<Property[]> {
-    await delay(800); // Simula el fetch
-    const saved = localStorage.getItem(STORAGE_KEYS.PROPERTIES);
-    return saved ? JSON.parse(saved) : INITIAL_PROPERTIES;
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as PropertyRow[]).map(mapRowToProperty);
   },
 
   async getActiveProperties(): Promise<Property[]> {
-    const props = await this.getProperties();
-    return props.filter(p => p.status === PropertyStatus.ACTIVE);
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('status', PropertyStatus.ACTIVE)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as PropertyRow[]).map(mapRowToProperty);
   },
 
   async getPropertyById(id: string): Promise<Property | undefined> {
-    const props = await this.getProperties();
-    return props.find(p => p.id === id);
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data ? mapRowToProperty(data as PropertyRow) : undefined;
   },
 
-  async saveProperty(property: Property): Promise<void> {
-    await delay(1000); // Simula guardado en DB
-    const props = await this.getProperties();
-    const index = props.findIndex(p => p.id === property.id);
-    
-    let newProps;
-    if (index >= 0) {
-      newProps = [...props];
-      newProps[index] = property;
-    } else {
-      newProps = [property, ...props];
-    }
-    localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(newProps));
+  async saveProperty(property: Property): Promise<Property> {
+    const baseRow = mapPropertyToRow(property);
+
+    // If this is an existing UUID, keep it; otherwise let DB generate a UUID.
+    const shouldSendId = property.id && isUuid(property.id);
+
+    const { data, error } = shouldSendId
+      ? await supabase
+          .from('properties')
+          .upsert({ id: property.id, ...baseRow })
+          .select('*')
+          .single()
+      : await supabase
+          .from('properties')
+          .insert(baseRow)
+          .select('*')
+          .single();
+
+    if (error) throw error;
+    return mapRowToProperty(data as PropertyRow);
   },
 
   async deleteProperty(id: string): Promise<void> {
-    await delay(1000);
-    const props = await this.getProperties();
-    const filtered = props.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.PROPERTIES, JSON.stringify(filtered));
+    const { error } = await supabase.from('properties').delete().eq('id', id);
+    if (error) throw error;
   },
 
-  // --- LANDING CONTENT ---
+  // --- LANDING CONTENT (still localStorage) ---
   async getLandingContent(): Promise<LandingContent> {
-    await delay(600);
     const saved = localStorage.getItem(STORAGE_KEYS.LANDING);
     return saved ? JSON.parse(saved) : INITIAL_LANDING_CONTENT;
   },
 
   async updateLandingContent(content: LandingContent): Promise<void> {
-    await delay(1200);
     localStorage.setItem(STORAGE_KEYS.LANDING, JSON.stringify(content));
   },
-
-  // --- AUTH --- (Removed local admin status, now handled by Supabase)
-  // async checkAdminStatus(): Promise<boolean> {
-  //   return localStorage.getItem(STORAGE_KEYS.ADMIN) === 'true';
-  // },
-
-  // setAdminStatus(status: boolean): void {
-  //   localStorage.setItem(STORAGE_KEYS.ADMIN, status.toString());
-  // }
 };

@@ -163,8 +163,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     setIsProcessing(true);
     try {
       const updatedProp = { ...prop, status: prop.status === PropertyStatus.ACTIVE ? PropertyStatus.ARCHIVED : PropertyStatus.ACTIVE };
-      await apiService.saveProperty(updatedProp);
-      setProperties(prev => prev.map(p => p.id === id ? updatedProp : p));
+      const saved = await apiService.saveProperty(updatedProp);
+      setProperties(prev => prev.map(p => p.id === id ? saved : p));
       setStatus({ message: 'Estado actualizado', type: 'success' });
     } catch (e) { setStatus({ message: 'Error', type: 'error' }); } finally { setIsProcessing(false); }
   };
@@ -187,7 +187,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
       const formData = new FormData(e.currentTarget);
       const priceVal = formData.get('price');
       const newProp: Property = {
-        id: editingProperty?.id || Math.random().toString(36).substr(2, 9),
+        id: editingProperty?.id ?? '',
         title: formData.get('title') as string,
         description: formData.get('description') as string,
         price: priceVal && priceVal !== '' ? Number(priceVal) : null,
@@ -200,9 +200,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         status: editingProperty?.status || PropertyStatus.ACTIVE,
         featured: formData.get('featured') === 'on'
       };
-      await apiService.saveProperty(newProp);
-      if (editingProperty) setProperties(prev => prev.map(p => p.id === editingProperty.id ? newProp : p));
-      else setProperties(prev => [newProp, ...prev]);
+
+      const saved = await apiService.saveProperty(newProp);
+
+      if (editingProperty) setProperties(prev => prev.map(p => p.id === editingProperty.id ? saved : p));
+      else setProperties(prev => [saved, ...prev]);
+
       setStatus({ message: 'Propiedad guardada', type: 'success' });
       setEditingProperty(null); setShowForm(false);
     } catch (e) { setStatus({ message: 'Error al guardar', type: 'error' }); } finally { setIsProcessing(false); }
