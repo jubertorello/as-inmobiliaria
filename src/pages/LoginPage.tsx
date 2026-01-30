@@ -68,10 +68,8 @@ const LoginPage: React.FC = () => {
                 email_input_placeholder: 'Tu correo electrónico',
                 password_input_placeholder: 'Tu contraseña',
                 button_label: 'Iniciar sesión',
-                social_auth_typography: 'O inicia sesión con',
+                social_provider_text: 'O inicia sesión con',
                 link_text: '¿Ya tienes una cuenta? Inicia sesión',
-                no_account_row: '¿No tienes una cuenta?',
-                sign_up_link: 'Regístrate',
               },
               sign_up: {
                 email_label: 'Correo electrónico',
@@ -79,10 +77,8 @@ const LoginPage: React.FC = () => {
                 email_input_placeholder: 'Tu correo electrónico',
                 password_input_placeholder: 'Crea una contraseña',
                 button_label: 'Registrarse',
-                social_auth_typography: 'O regístrate con',
+                social_provider_text: 'O regístrate con',
                 link_text: '¿No tienes una cuenta? Regístrate',
-                have_account_row: '¿Ya tienes una cuenta?',
-                sign_in_link: 'Inicia sesión',
               },
               forgotten_password: {
                 email_label: 'Correo electrónico',
@@ -100,7 +96,7 @@ const LoginPage: React.FC = () => {
                 email_input_placeholder: 'Tu correo electrónico',
                 button_label: 'Enviar enlace mágico',
                 link_text: 'Enviar un enlace mágico',
-                email_link_sent: 'Revisa tu correo para el enlace mágico',
+                confirmation_text: 'Revisa tu correo para el enlace mágico',
               },
             },
           }}
