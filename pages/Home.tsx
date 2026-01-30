@@ -145,6 +145,14 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
               loading="lazy"
               className="rounded-3xl shadow-2xl aspect-[4/5] object-cover"
             />
+
+            {/* Mobile badge */}
+            <div className="absolute bottom-4 right-4 p-5 bg-white/95 shadow-xl rounded-2xl border border-gray-50 text-center md:hidden">
+              <span className="text-3xl font-bold block mb-0.5 text-brand-pink">{content.aboutExperience}</span>
+              <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">Años de Trayectoria</span>
+            </div>
+
+            {/* Desktop badge */}
             <div className="absolute -bottom-8 -right-8 p-10 bg-white shadow-2xl rounded-3xl hidden md:block border border-gray-50 text-center animate-bounce-slow">
               <span className="text-5xl font-bold block mb-1 text-brand-pink">{content.aboutExperience}</span>
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Años de Trayectoria</span>
