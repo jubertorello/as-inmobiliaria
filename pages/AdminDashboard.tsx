@@ -236,31 +236,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
       <div className="max-w-7xl mx-auto">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
-          <h1 className="text-4xl font-playfair text-gray-900">Gestión Andrea Sartori</h1>
-          <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
-            <button onClick={() => setActiveTab('properties')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'properties' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Propiedades</button>
-            <button onClick={() => setActiveTab('content')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'content' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Web</button>
+          <h1 className="text-3xl sm:text-4xl font-playfair text-gray-900">Gestión Andrea Sartori</h1>
+          <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto scrollbar-hide">
+            <button onClick={() => setActiveTab('properties')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'properties' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Propiedades</button>
+            <button onClick={() => setActiveTab('content')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'content' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Web</button>
             {isSuperAdmin && (
-              <button onClick={() => setActiveTab('users')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'users' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Usuarios</button>
+              <button onClick={() => setActiveTab('users')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'users' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Usuarios</button>
             )}
           </div>
         </header>
 
         {activeTab === 'properties' ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <h2 className="text-xl font-bold text-gray-800">Listado Maestro</h2>
               <button onClick={() => { setEditingProperty(null); setShowForm(true); }} className="bg-brand-pink text-white px-6 py-3 rounded-xl text-xs font-bold uppercase shadow-lg hover:bg-brand-dark transition-all">Nueva Propiedad</button>
             </div>
 
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full min-w-[720px] text-left">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inmueble</th>
-                    <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Precio</th>
-                    <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado</th>
-                    <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
+                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inmueble</th>
+                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Precio</th>
+                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado</th>
+                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -268,31 +268,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     const hasImg = p.images && p.images.length > 0 && p.images[0] !== '';
                     return (
                       <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 flex items-center space-x-4">
-                          {hasImg ? (
-                            <img src={p.images[0]} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                              <span className="material-symbols-outlined text-lg">hide_image</span>
+                        <td className="px-4 md:px-6 py-4">
+                          <div className="flex items-center space-x-4">
+                            {hasImg ? (
+                              <img src={p.images[0]} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                                <span className="material-symbols-outlined text-lg">hide_image</span>
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <span className="font-bold text-gray-900 block line-clamp-1">{p.title}</span>
+                              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{p.type} · {p.operation}</span>
                             </div>
-                          )}
-                          <div>
-                            <span className="font-bold text-gray-900 block line-clamp-1">{p.title}</span>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{p.type} · {p.operation}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-bold text-gray-800">
+                        <td className="px-4 md:px-6 py-4 font-bold text-gray-800 whitespace-nowrap">
                           {p.price && p.price > 0 ? `${p.currency} ${p.price.toLocaleString()}` : 'CONSULTAR'}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${p.status === 'Activa' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 flex space-x-2">
-                          <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
-                          <button onClick={() => handleArchive(p.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"><span className="material-symbols-outlined">archive</span></button>
-                          <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-2">
+                            <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
+                            <button onClick={() => handleArchive(p.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"><span className="material-symbols-outlined">archive</span></button>
+                            <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -398,7 +402,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
               ))}
             </div>
 
-            <form onSubmit={handleSaveLanding} className="p-8 space-y-10 max-w-4xl mx-auto">
+            <form onSubmit={handleSaveLanding} className="p-5 sm:p-8 space-y-10 max-w-4xl mx-auto">
               {contentSubTab === 'brand' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
                   <div className="space-y-2">
@@ -594,7 +598,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
             </form>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Invitar usuario</h2>
             <p className="text-sm text-gray-500 mb-6">
               Agregá un email y se enviará una invitación. Ese email quedará habilitado para acceder al panel.
@@ -626,9 +630,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                   <div className="p-4 text-sm text-gray-500">No hay emails cargados.</div>
                 ) : (
                   allowedEmails.map((row) => (
-                    <div key={row.email} className="p-4 flex items-center justify-between">
-                      <div className="font-medium text-gray-900">{row.email}</div>
-                      <div className="text-xs text-gray-400">{row.created_at ? new Date(row.created_at).toLocaleString() : ''}</div>
+                    <div key={row.email} className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1 font-medium text-gray-900 truncate">{row.email}</div>
+                      <div className="text-xs text-gray-400 whitespace-nowrap">{row.created_at ? new Date(row.created_at).toLocaleString() : ''}</div>
                     </div>
                   ))
                 )}
