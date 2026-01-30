@@ -51,7 +51,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setSession(initialSession);
       setUser(initialSession?.user || null);
       setLoading(false);
-      if (initialSession?.user?.email === 'admin@example.com') { // Replace with your admin email
+      if (initialSession?.user?.email === 'julietabertorello@gmail.com') { // Replace with your admin email
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
