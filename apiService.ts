@@ -1,4 +1,3 @@
-
 import { Property, LandingContent, PropertyStatus } from './types';
 import { INITIAL_PROPERTIES, INITIAL_LANDING_CONTENT } from './constants';
 
@@ -8,7 +7,7 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 const STORAGE_KEYS = {
   PROPERTIES: 'as_properties',
   LANDING: 'as_landing',
-  ADMIN: 'as_admin'
+  // ADMIN: 'as_admin' // Removed, now handled by Supabase
 };
 
 export const apiService = {
@@ -63,12 +62,12 @@ export const apiService = {
     localStorage.setItem(STORAGE_KEYS.LANDING, JSON.stringify(content));
   },
 
-  // --- AUTH ---
-  async checkAdminStatus(): Promise<boolean> {
-    return localStorage.getItem(STORAGE_KEYS.ADMIN) === 'true';
-  },
+  // --- AUTH --- (Removed local admin status, now handled by Supabase)
+  // async checkAdminStatus(): Promise<boolean> {
+  //   return localStorage.getItem(STORAGE_KEYS.ADMIN) === 'true';
+  // },
 
-  setAdminStatus(status: boolean): void {
-    localStorage.setItem(STORAGE_KEYS.ADMIN, status.toString());
-  }
+  // setAdminStatus(status: boolean): void {
+  //   localStorage.setItem(STORAGE_KEYS.ADMIN, status.toString());
+  // }
 };

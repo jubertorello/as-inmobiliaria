@@ -1,8 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from '../types';
 import { apiService } from '../apiService';
 import SEO from '../components/SEO';
+import { useSession } from '../components/SessionProvider'; // Import useSession
+import { supabase } from '../integrations/supabase/client'; // Import supabase client
+import { useNavigate } from 'react-router-dom';
 
 interface AdminDashboardProps {
   isAdmin: boolean;
@@ -10,24 +12,27 @@ interface AdminDashboardProps {
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>;
   content: LandingContent;
   setContent: React.Dispatch<React.SetStateAction<LandingContent>>;
-  setIsAdmin: (val: boolean) => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, setProperties, content, setContent, setIsAdmin }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, setProperties, content, setContent }) => {
   const [activeTab, setActiveTab] = useState<'properties' | 'content'>('properties');
   const [contentSubTab, setContentSubTab] = useState<'brand' | 'hero' | 'services' | 'sections' | 'about' | 'footer' | 'seo'>('brand');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showForm, setShowForm] = useState(false);
   
-  const [usernameInput, setUsernameInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
-  const [loginError, setLoginError] = useState(false);
+  // Removed local login state, now handled by Supabase
+  // const [usernameInput, setUsernameInput] = useState('');
+  // const [passwordInput, setPasswordInput] = useState('');
+  // const [loginError, setLoginError] = useState(false);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [tempFeatures, setTempFeatures] = useState<string[]>(content.aboutFeatures);
   const [tempImages, setTempImages] = useState<string[]>([]);
+
+  const navigate = useNavigate();
+  const { session, loading: loadingSession } = useSession(); // Get session and loading state from context
 
   useEffect(() => {
     if (status) {
@@ -44,17 +49,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     }
   }, [editingProperty, showForm]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (usernameInput.toLowerCase() === 'andrea' && passwordInput === '1234') {
-      setIsAdmin(true);
-      setLoginError(false);
-      setStatus({ message: 'Bienvenido, Andrea', type: 'success' });
-    } else {
-      setLoginError(true);
-      setStatus({ message: 'Credenciales inválidas', type: 'error' });
-    }
-  };
+  // No local login handler needed, it's handled by LoginPage and ProtectedRoute
+  // const handleLogin = (e: React.FormEvent) => { ... };
 
   const handleSaveLanding = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -176,19 +172,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     setTempImages(next);
   };
 
-  if (!isAdmin) {
+  // If not admin, redirect to login (handled by ProtectedRoute)
+  // The component will only render if isAdmin is true due to ProtectedRoute
+  if (loadingSession) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 px-4">
-        <SEO title="Acceso Administrativo" robots="noindex" />
-        <div className="bg-white p-10 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md">
-           <h2 className="text-3xl font-playfair font-bold text-center mb-10">Acceso Maestro</h2>
-           <form onSubmit={handleLogin} className="space-y-6">
-            <input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" placeholder="Usuario" required />
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" placeholder="Contraseña" required />
-            {loginError && <div className="text-red-500 text-xs text-center font-bold">Credenciales inválidas</div>}
-            <button type="submit" className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl shadow-lg hover:bg-brand-dark transition-colors active:scale-95">Entrar</button>
-           </form>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-brand-pinkLight border-t-brand-pink rounded-full animate-spin"></div>
       </div>
     );
   }

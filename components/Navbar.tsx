@@ -1,22 +1,23 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BRAND_COLOR, SECONDARY_COLOR } from '../constants';
 import { LandingContent } from '../types';
+import { useSession } from '../components/SessionProvider'; // Import useSession
+import { supabase } from '../integrations/supabase/client'; // Import supabase client
 
 interface NavbarProps {
   isAdmin: boolean;
-  setIsAdmin: (val: boolean) => void;
   content: LandingContent;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isAdmin, setIsAdmin, content }) => {
+const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { session } = useSession(); // Get session from context
 
-  const handleLogout = () => {
-    setIsAdmin(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/');
   };
 
@@ -94,23 +95,34 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, setIsAdmin, content }) => {
               </Link>
             ))}
             
-            <Link
-              to="/admin"
-              title="Panel Administrativo"
-              className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${
-                location.pathname === '/admin' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
-              }`}
-            >
-              <span className="material-symbols-outlined text-2xl">person</span>
-            </Link>
-
-            {isAdmin && (
-              <button
-                onClick={handleLogout}
-                className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 rounded-full bg-gray-900 text-white hover:bg-red-600 transition-all shadow-md"
+            {isAdmin ? (
+              <>
+                <Link
+                  to="/admin"
+                  title="Panel Administrativo"
+                  className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${
+                    location.pathname === '/admin' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-[10px] font-bold uppercase tracking-widest px-5 py-2 rounded-full bg-gray-900 text-white hover:bg-red-600 transition-all shadow-md"
+                >
+                  Salir
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                title="Iniciar Sesión"
+                className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${
+                  location.pathname === '/login' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
+                }`}
               >
-                Salir
-              </button>
+                <span className="material-symbols-outlined text-2xl">person</span>
+              </Link>
             )}
           </div>
 
@@ -142,14 +154,33 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, setIsAdmin, content }) => {
                 {link.name}
               </Link>
             ))}
-            <Link
-              to="/admin"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center space-x-3 px-3 py-4 text-base font-bold uppercase tracking-widest text-gray-600 border-b border-gray-50 last:border-none"
-            >
-              <span className="material-symbols-outlined text-2xl text-gray-400">person</span>
-              <span>Panel Administrativo</span>
-            </Link>
+            {isAdmin ? (
+              <>
+                <Link
+                  to="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-3 px-3 py-4 text-base font-bold uppercase tracking-widest text-gray-600 border-b border-gray-50 last:border-none"
+                >
+                  <span className="material-symbols-outlined text-2xl text-gray-400">admin_panel_settings</span>
+                  <span>Panel Administrativo</span>
+                </Link>
+                <button
+                  onClick={() => { handleLogout(); setIsOpen(false); }}
+                  className="w-full text-left px-3 py-4 text-base font-bold uppercase tracking-widest text-gray-600 border-b border-gray-50 last:border-none"
+                >
+                  Salir
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center space-x-3 px-3 py-4 text-base font-bold uppercase tracking-widest text-gray-600 border-b border-gray-50 last:border-none"
+              >
+                <span className="material-symbols-outlined text-2xl text-gray-400">person</span>
+                <span>Iniciar Sesión</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
