@@ -6,7 +6,7 @@ import { apiService } from './apiService';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
-import { SessionProvider, useSession } from './components/SessionProvider'; // Import SessionProvider and useSession
+import { SessionProvider, useSession } from './components/SessionProvider.tsx'; // Import SessionProvider and useSession
 import LoginPage from './pages/LoginPage'; // Import LoginPage
 
 // Lazy loading of pages for performance optimization
