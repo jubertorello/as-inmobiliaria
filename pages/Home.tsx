@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Property, LandingContent } from '../types';
@@ -12,7 +11,12 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({ properties, content }) => {
-  const featured = properties.filter(p => p.featured).slice(0, 3);
+  const featured = (() => {
+    const picked = properties.filter(p => p.featured).slice(0, 3);
+    if (picked.length > 0) return picked;
+    return properties.slice(0, 3);
+  })();
+
   const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
 
   return (
