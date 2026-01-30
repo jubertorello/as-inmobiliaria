@@ -1,0 +1,7 @@
+{
+  "name": "Andrea Sartori Inmobiliaria",
+  "description": "Plataforma inmobiliaria moderna con panel de administración para la gestión de propiedades y contenidos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

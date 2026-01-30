@@ -1,0 +1,92 @@
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Property, OperationType } from '../types';
+
+interface PropertyCardProps {
+  property: Property;
+}
+
+const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+  const hasImages = property.images && property.images.length > 0 && property.images[0] !== '';
+
+  const getBadgeColor = (op: OperationType) => {
+    switch (op) {
+      case OperationType.SALE: return 'bg-brand-dark';
+      case OperationType.RENT: return 'bg-brand-pink';
+      case OperationType.TEMPORARY_RENT: return 'bg-[#D979AE]';
+      default: return 'bg-gray-600';
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">
+      <div className="relative h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50">
+        {hasImages ? (
+          <img
+            src={property.images[0]}
+            alt={property.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800'; 
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 p-8 text-center bg-gray-50">
+            <span className="material-symbols-outlined text-6xl mb-3 opacity-50">hide_image</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] leading-relaxed">Imagen no disponible</span>
+          </div>
+        )}
+        
+        <div className={`absolute top-4 left-4 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm ${getBadgeColor(property.operation)}`}>
+          {property.operation}
+        </div>
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm border border-gray-100">
+          {property.type}
+        </div>
+      </div>
+
+      <div className="p-6 flex flex-col flex-grow">
+        <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-brand-pink transition-colors">
+          {property.title}
+        </h3>
+        <p className="text-gray-500 text-sm mb-4 flex items-center">
+          <span className="material-symbols-outlined text-lg mr-1 text-brand-pink">location_on</span>
+          {property.location}
+        </p>
+        
+        <div className="flex items-center space-x-4 mb-6 text-xs text-gray-600">
+          <span className="flex items-center bg-gray-50 px-2 py-1 rounded-lg">
+            <span className="font-bold mr-1">{property.area}</span> m²
+          </span>
+          {property.bedrooms !== undefined && property.bedrooms > 0 && (
+            <span className="flex items-center bg-gray-50 px-2 py-1 rounded-lg">
+              <span className="font-bold mr-1">{property.bedrooms}</span> Dorm.
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+          <div className="flex flex-col">
+            <span className="text-[8px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Precio</span>
+            <span className="text-xl font-bold text-brand-pink">
+              {property.price && property.price > 0 
+                ? `${property.currency} ${property.price.toLocaleString()}` 
+                : 'CONSULTAR'}
+            </span>
+          </div>
+          <Link
+            to={`/propiedad/${property.id}`}
+            className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors flex items-center group/btn"
+          >
+            Detalles
+            <span className="material-symbols-outlined text-sm ml-1 transition-transform group-hover/btn:translate-x-1">chevron_right</span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PropertyCard;
