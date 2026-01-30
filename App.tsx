@@ -7,7 +7,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import { SessionProvider, useSession } from './src/components/SessionProvider'; // Import SessionProvider and useSession
-import LoginPage from './pages/LoginPage'; // Import LoginPage
+import LoginPage from './src/pages/LoginPage'; // Import LoginPage
 
 // Lazy loading of pages for performance optimization
 const Home = lazy(() => import('./pages/Home'));
