@@ -9,6 +9,7 @@ import SEO from "../../components/SEO";
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { session, loading } = useSession();
+  const [view, setView] = React.useState<'sign_in' | 'forgotten_password'>('sign_in');
 
   React.useEffect(() => {
     if (session) {
@@ -29,13 +30,13 @@ const LoginPage: React.FC = () => {
       <SEO title="Iniciar Sesión" robots="noindex" />
       <div className="bg-white p-10 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md">
         <h2 className="text-3xl font-playfair font-bold text-center mb-3 text-gray-900">Acceso a tu Cuenta</h2>
-        <p className="text-sm text-gray-500 text-center mb-10">
+        <p className="text-sm text-gray-500 text-center mb-8">
           Acceso solo por invitación. Si necesitás acceso, solicitáselo a la administradora.
         </p>
 
         <Auth
           supabaseClient={supabase}
-          view="sign_in"
+          view={view}
           showLinks={false}
           appearance={{
             theme: ThemeSupa,
@@ -76,8 +77,7 @@ const LoginPage: React.FC = () => {
               forgotten_password: {
                 email_label: 'Correo electrónico',
                 email_input_placeholder: 'Tu correo electrónico',
-                button_label: 'Enviar instrucciones de recuperación',
-                link_text: '¿Olvidaste tu contraseña?',
+                button_label: 'Enviar email de recuperación',
               },
               update_password: {
                 password_label: 'Nueva contraseña',
@@ -87,6 +87,26 @@ const LoginPage: React.FC = () => {
             },
           }}
         />
+
+        <div className="mt-6 text-center">
+          {view === 'sign_in' ? (
+            <button
+              type="button"
+              onClick={() => setView('forgotten_password')}
+              className="text-xs font-bold uppercase tracking-widest text-brand-pink hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setView('sign_in')}
+              className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700"
+            >
+              Volver a iniciar sesión
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
