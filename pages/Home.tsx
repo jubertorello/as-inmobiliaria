@@ -4,6 +4,7 @@ import { Property, LandingContent } from '../types';
 import PropertyCard from '../components/PropertyCard';
 import SEO from '../components/SEO';
 import SectionHeader from '../components/SectionHeader';
+import DirectContactForm from '../components/DirectContactForm';
 
 interface HomeProps {
   properties: Property[];
@@ -200,22 +201,7 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
               </div>
             </div>
 
-            <div className="bg-white p-10 md:p-14 rounded-[3rem] shadow-2xl">
-               <h3 className="text-gray-900 font-bold mb-8 uppercase tracking-[0.2em] text-[10px]">Consultas Directas</h3>
-               <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tu Nombre</label>
-                    <input type="text" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-gray-900 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Mensaje</label>
-                    <textarea rows={4} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-gray-900 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"></textarea>
-                  </div>
-                  <button className="w-full py-5 bg-brand-pink text-white font-bold rounded-2xl uppercase tracking-[0.2em] shadow-xl hover:bg-brand-dark transition-all active:scale-95">
-                    Enviar Mensaje
-                  </button>
-               </div>
-            </div>
+            <DirectContactForm />
           </div>
         </div>
       </section>
