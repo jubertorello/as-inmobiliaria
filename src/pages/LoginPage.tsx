@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSession } from '../components/SessionProvider';
 import SEO from "../../components/SEO";
 
-type AuthView = 'sign_in' | 'forgotten_password' | 'magic_link';
+type AuthView = 'sign_in' | 'forgotten_password';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,14 +33,13 @@ const LoginPage: React.FC = () => {
       <div className="bg-white p-10 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md">
         <h2 className="text-3xl font-playfair font-bold text-center mb-3 text-gray-900">Acceso a tu Cuenta</h2>
         <p className="text-sm text-gray-500 text-center mb-8">
-          Acceso solo por invitación. Si necesitás acceso, solicitáselo a la administradora.
+          Ingresá con tu email y contraseña.
         </p>
 
         <Auth
           supabaseClient={supabase}
           view={view}
           showLinks={false}
-          magicLink={true}
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -82,11 +81,6 @@ const LoginPage: React.FC = () => {
                 email_input_placeholder: 'Tu correo electrónico',
                 button_label: 'Enviar email de recuperación',
               },
-              magic_link: {
-                email_input_placeholder: 'Tu correo electrónico',
-                button_label: 'Enviar enlace mágico',
-                confirmation_text: 'Revisá tu correo para el enlace mágico',
-              },
               update_password: {
                 password_label: 'Nueva contraseña',
                 password_input_placeholder: 'Tu nueva contraseña',
@@ -97,17 +91,7 @@ const LoginPage: React.FC = () => {
         />
 
         <div className="mt-6 flex flex-col gap-2 text-center">
-          {view !== 'sign_in' && (
-            <button
-              type="button"
-              onClick={() => setView('sign_in')}
-              className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700"
-            >
-              Volver a iniciar sesión
-            </button>
-          )}
-
-          {view !== 'forgotten_password' && (
+          {view === 'sign_in' ? (
             <button
               type="button"
               onClick={() => setView('forgotten_password')}
@@ -115,15 +99,13 @@ const LoginPage: React.FC = () => {
             >
               ¿Olvidaste tu contraseña?
             </button>
-          )}
-
-          {view !== 'magic_link' && (
+          ) : (
             <button
               type="button"
-              onClick={() => setView('magic_link')}
-              className="text-xs font-bold uppercase tracking-widest text-brand-pink hover:underline"
+              onClick={() => setView('sign_in')}
+              className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700"
             >
-              Entrar con enlace mágico (sin contraseña)
+              Volver a iniciar sesión
             </button>
           )}
         </div>

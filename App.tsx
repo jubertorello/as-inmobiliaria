@@ -6,8 +6,9 @@ import { apiService } from './apiService';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
-import { SessionProvider, useSession } from './src/components/SessionProvider'; // Import SessionProvider and useSession
-import LoginPage from './src/pages/LoginPage'; // Import LoginPage
+import { SessionProvider, useSession } from './src/components/SessionProvider';
+import LoginPage from './src/pages/LoginPage';
+import BootstrapAdmin from './src/pages/BootstrapAdmin';
 
 // Lazy loading of pages for performance optimization
 const Home = lazy(() => import('./pages/Home'));
@@ -40,8 +41,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     if (!loading && !session) {
       navigate('/login');
     } else if (!loading && session && !isAdmin) {
-      // If logged in but not admin, redirect to home or show unauthorized message
-      navigate('/'); 
+      navigate('/');
     }
   }, [session, loading, isAdmin, navigate]);
 
@@ -59,8 +59,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [landingContent, setLandingContent] = useState<LandingContent>(INITIAL_LANDING_CONTENT);
-  const [loadingApp, setLoadingApp] = useState(true); // Renamed to avoid conflict with session loading
-  const { isAdmin, loading: loadingSession } = useSession(); // Use isAdmin from session context
+  const [loadingApp, setLoadingApp] = useState(true);
+  const { isAdmin, loading: loadingSession } = useSession();
 
   useEffect(() => {
     const initApp = async () => {
@@ -72,7 +72,7 @@ const AppContent: React.FC = () => {
         setProperties(props);
         setLandingContent(content);
       } catch (error) {
-        console.error("Error cargando datos:", error);
+        console.error('Error cargando datos:', error);
       } finally {
         setLoadingApp(false);
       }
@@ -96,7 +96,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800">
       <Navbar isAdmin={isAdmin} content={landingContent} />
-      
+
       <main className="flex-grow">
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -104,19 +104,20 @@ const AppContent: React.FC = () => {
             <Route path="/propiedades" element={<Properties properties={activeProperties} />} />
             <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route 
-              path="/admin" 
+            <Route path="/bootstrap" element={<BootstrapAdmin />} />
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute>
-                  <AdminDashboard 
-                    isAdmin={isAdmin} 
-                    properties={properties} 
-                    setProperties={setProperties} 
+                  <AdminDashboard
+                    isAdmin={isAdmin}
+                    properties={properties}
+                    setProperties={setProperties}
                     content={landingContent}
                     setContent={setLandingContent}
                   />
                 </ProtectedRoute>
-              } 
+              }
             />
           </Routes>
         </Suspense>
