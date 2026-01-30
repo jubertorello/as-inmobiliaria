@@ -6,6 +6,8 @@ import { useSession } from '../src/components/SessionProvider';
 import { supabase } from '../src/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+const SUPER_ADMIN_EMAIL = 'julietabertorello@gmail.com';
+
 interface AdminDashboardProps {
   isAdmin: boolean;
   properties: Property[];
@@ -15,24 +17,24 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, setProperties, content, setContent }) => {
-  const [activeTab, setActiveTab] = useState<'properties' | 'content'>('properties');
+  const [activeTab, setActiveTab] = useState<'properties' | 'content' | 'users'>('properties');
   const [contentSubTab, setContentSubTab] = useState<'brand' | 'hero' | 'services' | 'sections' | 'about' | 'footer' | 'seo'>('brand');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showForm, setShowForm] = useState(false);
-  
-  // Removed local login state, now handled by Supabase
-  // const [usernameInput, setUsernameInput] = useState('');
-  // const [passwordInput, setPasswordInput] = useState('');
-  // const [loginError, setLoginError] = useState(false);
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [tempFeatures, setTempFeatures] = useState<string[]>(content.aboutFeatures);
   const [tempImages, setTempImages] = useState<string[]>([]);
 
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [allowedEmails, setAllowedEmails] = useState<Array<{ email: string; created_at: string | null }>>([]);
+
   const navigate = useNavigate();
-  const { session, loading: loadingSession } = useSession(); // Get session and loading state from context
+  const { session, user, loading: loadingSession } = useSession();
+  const isSuperAdmin = (user?.email || '').toLowerCase() === SUPER_ADMIN_EMAIL;
 
   useEffect(() => {
     if (status) {
@@ -49,8 +51,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     }
   }, [editingProperty, showForm]);
 
-  // No local login handler needed, it's handled by LoginPage and ProtectedRoute
-  // const handleLogin = (e: React.FormEvent) => { ... };
+  useEffect(() => {
+    const loadAllowed = async () => {
+      if (!isSuperAdmin || activeTab !== 'users') return;
+      const { data, error } = await supabase
+        .from('admin_allowlist')
+        .select('email, created_at')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) setAllowedEmails(data);
+    };
+
+    void loadAllowed();
+  }, [activeTab, isSuperAdmin]);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+
+    setInviting(true);
+    try {
+      const { error } = await supabase.functions.invoke('invite-admin', {
+        body: { email },
+      });
+
+      if (error) {
+        setStatus({ message: error.message, type: 'error' });
+        return;
+      }
+
+      setInviteEmail('');
+      setStatus({ message: 'Invitación enviada', type: 'success' });
+
+      const { data } = await supabase
+        .from('admin_allowlist')
+        .select('email, created_at')
+        .order('created_at', { ascending: false });
+      if (data) setAllowedEmails(data);
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const handleSaveLanding = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -104,7 +146,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         ogImage: (formData.get('ogImage') as string) || content.ogImage,
         seoRobots: (formData.get('seoRobots') as string) || content.seoRobots,
       };
-      
+
       await apiService.updateLandingContent(newContent);
       setContent(newContent);
       setStatus({ message: 'Web actualizada exitosamente', type: 'success' });
@@ -172,8 +214,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     setTempImages(next);
   };
 
-  // If not admin, redirect to login (handled by ProtectedRoute)
-  // The component will only render if isAdmin is true due to ProtectedRoute
   if (loadingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -197,6 +237,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
           <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
             <button onClick={() => setActiveTab('properties')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'properties' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Propiedades</button>
             <button onClick={() => setActiveTab('content')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'content' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Web</button>
+            {isSuperAdmin && (
+              <button onClick={() => setActiveTab('users')} className={`px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'users' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Usuarios</button>
+            )}
           </div>
         </header>
 
@@ -206,7 +249,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
               <h2 className="text-xl font-bold text-gray-800">Listado Maestro</h2>
               <button onClick={() => { setEditingProperty(null); setShowForm(true); }} className="bg-brand-pink text-white px-6 py-3 rounded-xl text-xs font-bold uppercase shadow-lg hover:bg-brand-dark transition-all">Nueva Propiedad</button>
             </div>
-            
+
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -244,7 +287,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                           </span>
                         </td>
                         <td className="px-6 py-4 flex space-x-2">
-                          <button onClick={() => {setEditingProperty(p); setShowForm(true);}} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
+                          <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
                           <button onClick={() => handleArchive(p.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"><span className="material-symbols-outlined">archive</span></button>
                           <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
                         </td>
@@ -258,92 +301,92 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
             {showForm && (
               <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                 <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-2xl animate-in zoom-in-95 duration-300">
-                   <h3 className="text-2xl font-playfair font-bold mb-8">{editingProperty ? 'Editar' : 'Nueva'} Propiedad</h3>
-                   <form onSubmit={handleSaveProperty} className="space-y-6">
+                  <h3 className="text-2xl font-playfair font-bold mb-8">{editingProperty ? 'Editar' : 'Nueva'} Propiedad</h3>
+                  <form onSubmit={handleSaveProperty} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Título</label>
+                      <input name="title" placeholder="Ej: Casa 3 dorm. con piscina" defaultValue={editingProperty?.title} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Título</label>
-                        <input name="title" placeholder="Ej: Casa 3 dorm. con piscina" defaultValue={editingProperty?.title} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tipo</label>
+                        <select name="type" defaultValue={editingProperty?.type} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
+                          {Object.values(PropertyType).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tipo</label>
-                          <select name="type" defaultValue={editingProperty?.type} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
-                            {Object.values(PropertyType).map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Operación</label>
-                          <select name="operation" defaultValue={editingProperty?.operation} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
-                            {Object.values(OperationType).map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Precio (Vacío = CONSULTAR)</label>
-                          <input name="price" type="number" placeholder="Ej: 150000" defaultValue={editingProperty?.price || ''} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Moneda</label>
-                          <select name="currency" defaultValue={editingProperty?.currency} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
-                            <option value="USD">USD</option>
-                            <option value="ARS">ARS</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ubicación</label>
-                          <input name="location" placeholder="Las Varillas, Córdoba" defaultValue={editingProperty?.location} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Superficie (m²)</label>
-                          <input name="area" type="number" placeholder="Ej: 120" defaultValue={editingProperty?.area} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
-                        </div>
-                      </div>
-
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Descripción</label>
-                        <textarea name="description" rows={4} placeholder="Detalles..." defaultValue={editingProperty?.description} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"></textarea>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Operación</label>
+                        <select name="operation" defaultValue={editingProperty?.operation} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
+                          {Object.values(OperationType).map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
                       </div>
+                    </div>
 
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Imágenes (URLs)</label>
-                          <button type="button" onClick={() => setTempImages([...tempImages, ''])} className="text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline">+ Añadir</button>
-                        </div>
-                        <div className="space-y-2">
-                          {tempImages.map((img, i) => (
-                            <div key={i} className="flex space-x-2">
-                              <input value={img} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." className="flex-grow bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-brand-pink" />
-                              <button type="button" onClick={() => setTempImages(tempImages.filter((_, idx) => idx !== i))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><span className="material-symbols-outlined">delete</span></button>
-                            </div>
-                          ))}
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Precio (Vacío = CONSULTAR)</label>
+                        <input name="price" type="number" placeholder="Ej: 150000" defaultValue={editingProperty?.price || ''} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Moneda</label>
+                        <select name="currency" defaultValue={editingProperty?.currency} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink">
+                          <option value="USD">USD</option>
+                          <option value="ARS">ARS</option>
+                        </select>
+                      </div>
+                    </div>
 
-                      <div className="flex items-center space-x-3 pt-4">
-                        <input type="checkbox" name="featured" id="featured" defaultChecked={editingProperty?.featured} className="w-5 h-5 accent-brand-pink" />
-                        <label htmlFor="featured" className="text-xs font-bold text-gray-700 uppercase tracking-widest cursor-pointer">Destacar en Inicio</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ubicación</label>
+                        <input name="location" placeholder="Las Varillas, Córdoba" defaultValue={editingProperty?.location} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Superficie (m²)</label>
+                        <input name="area" type="number" placeholder="Ej: 120" defaultValue={editingProperty?.area} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
+                      </div>
+                    </div>
 
-                      <div className="pt-6">
-                        <button type="submit" className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl uppercase tracking-widest shadow-xl hover:bg-brand-dark transition-all active:scale-95">
-                          {editingProperty ? 'Guardar Cambios' : 'Publicar'}
-                        </button>
-                        <button type="button" onClick={() => setShowForm(false)} className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600">Cancelar</button>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Descripción</label>
+                      <textarea name="description" rows={4} placeholder="Detalles..." defaultValue={editingProperty?.description} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"></textarea>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Imágenes (URLs)</label>
+                        <button type="button" onClick={() => setTempImages([...tempImages, ''])} className="text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline">+ Añadir</button>
                       </div>
-                   </form>
+                      <div className="space-y-2">
+                        {tempImages.map((img, i) => (
+                          <div key={i} className="flex space-x-2">
+                            <input value={img} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." className="flex-grow bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-brand-pink" />
+                            <button type="button" onClick={() => setTempImages(tempImages.filter((_, idx) => idx !== i))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><span className="material-symbols-outlined">delete</span></button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 pt-4">
+                      <input type="checkbox" name="featured" id="featured" defaultChecked={editingProperty?.featured} className="w-5 h-5 accent-brand-pink" />
+                      <label htmlFor="featured" className="text-xs font-bold text-gray-700 uppercase tracking-widest cursor-pointer">Destacar en Inicio</label>
+                    </div>
+
+                    <div className="pt-6">
+                      <button type="submit" className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl uppercase tracking-widest shadow-xl hover:bg-brand-dark transition-all active:scale-95">
+                        {editingProperty ? 'Guardar Cambios' : 'Publicar'}
+                      </button>
+                      <button type="button" onClick={() => setShowForm(false)} className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600">Cancelar</button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === 'content' ? (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide">
+            <div className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide">
               {(['brand', 'hero', 'services', 'sections', 'about', 'footer', 'seo'] as const).map(tab => (
                 <button key={tab} onClick={() => setContentSubTab(tab)} className={`flex-1 min-w-[120px] py-5 text-[10px] font-bold uppercase tracking-widest relative transition-all ${contentSubTab === tab ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'}`}>
                   {tab === 'brand' ? 'Marca' : tab === 'hero' ? 'Banner' : tab === 'services' ? 'Servicios' : tab === 'sections' ? 'Títulos' : tab === 'about' ? 'Historia' : tab === 'footer' ? 'Contacto' : 'SEO'}
@@ -546,6 +589,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                 </button>
               </div>
             </form>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Invitar usuario</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Agregá un email y se enviará una invitación. Ese email quedará habilitado para acceder al panel.
+            </p>
+
+            <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-3 md:items-end mb-8">
+              <div className="flex-1 space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</label>
+                <input
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="usuario@correo.com"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={inviting}
+                className="bg-brand-pink text-white px-6 py-3 rounded-xl text-xs font-bold uppercase shadow-lg hover:bg-brand-dark transition-all disabled:opacity-70"
+              >
+                {inviting ? 'Enviando...' : 'Enviar invitación'}
+              </button>
+            </form>
+
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Usuarios con acceso</h3>
+              <div className="bg-gray-50 border border-gray-100 rounded-2xl divide-y divide-gray-100 overflow-hidden">
+                {allowedEmails.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">No hay emails cargados.</div>
+                ) : (
+                  allowedEmails.map((row) => (
+                    <div key={row.email} className="p-4 flex items-center justify-between">
+                      <div className="font-medium text-gray-900">{row.email}</div>
+                      <div className="text-xs text-gray-400">{row.created_at ? new Date(row.created_at).toLocaleString() : ''}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

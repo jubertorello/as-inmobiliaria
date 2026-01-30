@@ -10,7 +10,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { session, loading } = useSession();
 
-  // Redirect authenticated users to the home page
   React.useEffect(() => {
     if (session) {
       navigate('/');
@@ -29,16 +28,22 @@ const LoginPage: React.FC = () => {
     <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 px-4 py-12">
       <SEO title="Iniciar Sesión" robots="noindex" />
       <div className="bg-white p-10 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md">
-        <h2 className="text-3xl font-playfair font-bold text-center mb-10 text-gray-900">Acceso a tu Cuenta</h2>
+        <h2 className="text-3xl font-playfair font-bold text-center mb-3 text-gray-900">Acceso a tu Cuenta</h2>
+        <p className="text-sm text-gray-500 text-center mb-10">
+          Acceso solo por invitación. Si necesitás acceso, solicitáselo a la administradora.
+        </p>
+
         <Auth
           supabaseClient={supabase}
+          view="sign_in"
+          showLinks={false}
           appearance={{
             theme: ThemeSupa,
             variables: {
               default: {
                 colors: {
-                  brand: '#D95FA2', // brand-pink
-                  brandAccent: '#532759', // brand-dark
+                  brand: '#D95FA2',
+                  brandAccent: '#532759',
                   defaultButtonBackground: '#F2F2F2',
                   defaultButtonBackgroundHover: '#E5E5E5',
                   defaultButtonBorder: '#E5E5E5',
@@ -50,16 +55,15 @@ const LoginPage: React.FC = () => {
                   inputPlaceholder: '#9CA3AF',
                 },
                 radii: {
-                  borderRadiusButton: '0.75rem', // rounded-xl
-                  buttonBorderRadius: '0.75rem', // rounded-xl
-                  inputBorderRadius: '0.75rem', // rounded-xl
+                  borderRadiusButton: '0.75rem',
+                  buttonBorderRadius: '0.75rem',
+                  inputBorderRadius: '0.75rem',
                 },
               },
             },
           }}
           theme="light"
-          providers={[]} // No social providers for now
-          magicLink={true} // Enable magic link for passwordless login
+          providers={[]}
           localization={{
             variables: {
               sign_in: {
@@ -68,21 +72,9 @@ const LoginPage: React.FC = () => {
                 email_input_placeholder: 'Tu correo electrónico',
                 password_input_placeholder: 'Tu contraseña',
                 button_label: 'Iniciar sesión',
-                social_provider_text: 'O inicia sesión con',
-                link_text: '¿Ya tienes una cuenta? Inicia sesión',
-              },
-              sign_up: {
-                email_label: 'Correo electrónico',
-                password_label: 'Contraseña',
-                email_input_placeholder: 'Tu correo electrónico',
-                password_input_placeholder: 'Crea una contraseña',
-                button_label: 'Registrarse',
-                social_provider_text: 'O regístrate con',
-                link_text: '¿No tienes una cuenta? Regístrate',
               },
               forgotten_password: {
                 email_label: 'Correo electrónico',
-                password_label: 'Contraseña',
                 email_input_placeholder: 'Tu correo electrónico',
                 button_label: 'Enviar instrucciones de recuperación',
                 link_text: '¿Olvidaste tu contraseña?',
@@ -91,12 +83,6 @@ const LoginPage: React.FC = () => {
                 password_label: 'Nueva contraseña',
                 password_input_placeholder: 'Tu nueva contraseña',
                 button_label: 'Actualizar contraseña',
-              },
-              magic_link: {
-                email_input_placeholder: 'Tu correo electrónico',
-                button_label: 'Enviar enlace mágico',
-                link_text: 'Enviar un enlace mágico',
-                confirmation_text: 'Revisa tu correo para el enlace mágico',
               },
             },
           }}

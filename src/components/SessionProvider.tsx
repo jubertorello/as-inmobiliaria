@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
+
+const SUPER_ADMIN_EMAIL = 'julietabertorello@gmail.com';
 
 interface SessionContextType {
   session: Session | null;
@@ -23,6 +25,20 @@ interface SessionProviderProps {
   children: React.ReactNode;
 }
 
+async function checkIsAdmin(user: User | null): Promise<boolean> {
+  if (!user?.email) return false;
+  if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) return true;
+
+  const { data, error } = await supabase
+    .from('admin_allowlist')
+    .select('email')
+    .eq('email', user.email.toLowerCase())
+    .maybeSingle();
+
+  if (error) return false;
+  return Boolean(data?.email);
+}
+
 export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -30,36 +46,32 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user || null);
-        setLoading(false);
+    let cancelled = false;
 
-        // Simple admin check: user with specific email or role
-        // For a real app, you'd check a 'roles' table or similar
-        if (currentSession?.user?.email === 'admin@example.com') { // Replace with your admin email
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-    );
+    const applySession = async (nextSession: Session | null) => {
+      const nextUser = nextSession?.user ?? null;
+      if (cancelled) return;
 
-    // Fetch initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user || null);
+      setSession(nextSession);
+      setUser(nextUser);
+
+      const nextIsAdmin = await checkIsAdmin(nextUser);
+      if (cancelled) return;
+
+      setIsAdmin(nextIsAdmin);
       setLoading(false);
-      if (initialSession?.user?.email === 'julietabertorello@gmail.com') { // Replace with your admin email
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+    };
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setLoading(true);
+      void applySession(nextSession);
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      cancelled = true;
+      listener.subscription.unsubscribe();
     };
   }, []);
 
