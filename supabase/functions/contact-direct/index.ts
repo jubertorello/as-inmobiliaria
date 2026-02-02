@@ -40,7 +40,11 @@ serve(async (req) => {
       });
     }
 
-    const toEmail = "novedosaoportunidad@gmail.com";
+    // You can override these with Supabase Edge Function secrets:
+    // - RESEND_TO_EMAIL
+    // - RESEND_FROM_EMAIL
+    const toEmail = (Deno.env.get("RESEND_TO_EMAIL") || "novedosaoportunidad@gmail.com").trim();
+    const fromEmail = (Deno.env.get("RESEND_FROM_EMAIL") || "Andrea Sartori Web <onboarding@resend.dev>").trim();
 
     const subject = `Consulta directa - ${name} (${phone})`;
     const html = `
@@ -60,7 +64,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Andrea Sartori Web <onboarding@resend.dev>",
+        from: fromEmail,
         to: [toEmail],
         subject,
         html,
