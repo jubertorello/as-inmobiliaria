@@ -40,6 +40,15 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+function getInitialSuperAdminPassword() {
+  // Never hardcode credentials in source control.
+  // Prefer SUPER_ADMIN_PASSWORD; keep SUPER_ADMIN_INITIAL_PASSWORD for backwards compatibility.
+  return (
+    (Deno.env.get("SUPER_ADMIN_PASSWORD") || "").trim() ||
+    (Deno.env.get("SUPER_ADMIN_INITIAL_PASSWORD") || "").trim()
+  );
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -133,14 +142,13 @@ serve(async (req) => {
     );
 
     if (!existing) {
-      // Password must come from a secret (never hardcode credentials)
-      const initialPassword = (Deno.env.get("SUPER_ADMIN_INITIAL_PASSWORD") || "").trim();
+      const initialPassword = getInitialSuperAdminPassword();
       if (!initialPassword) {
-        console.error(`[${functionName}] Missing SUPER_ADMIN_INITIAL_PASSWORD secret`);
+        console.error(`[${functionName}] Missing SUPER_ADMIN_PASSWORD secret`);
         return new Response(
           JSON.stringify({
             error:
-              "Server misconfigured: missing SUPER_ADMIN_INITIAL_PASSWORD secret (do not hardcode credentials in source control).",
+              "Server misconfigured: missing SUPER_ADMIN_PASSWORD secret (do not hardcode credentials in source control).",
           }),
           {
             status: 500,

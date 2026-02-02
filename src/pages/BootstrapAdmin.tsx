@@ -75,7 +75,7 @@ const BootstrapAdmin: React.FC = () => {
         </form>
 
         <p className="text-xs text-gray-400 mt-6">
-          Nota: la contraseña inicial ya no está hardcodeada; se toma de un secreto del servidor. Si necesitás cambiar la contraseña, hacelo desde Supabase o usando "Olvidé mi contraseña".
+          Nota: la contraseña inicial no está hardcodeada; se toma del secreto <span className="font-semibold">SUPER_ADMIN_PASSWORD</span> en el servidor. Si necesitás cambiar la contraseña, hacelo desde Supabase o usando "Olvidé mi contraseña".
         </p>
       </div>
     </div>
