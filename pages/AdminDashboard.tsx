@@ -16,7 +16,9 @@ interface AdminDashboardProps {
   setContent: React.Dispatch<React.SetStateAction<LandingContent>>;
 }
 
-type NewImage = { file: File; previewUrl: string };
+type NewImage = { file: File; previewUrl: string; previewLoaded: boolean };
+
+type ExistingImage = { url: string; loaded: boolean };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, setProperties, content, setContent }) => {
   const [activeTab, setActiveTab] = useState<'properties' | 'content' | 'users'>('properties');
@@ -28,7 +30,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [tempFeatures, setTempFeatures] = useState<string[]>(content.aboutFeatures);
-  const [tempImages, setTempImages] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
 
   const [inviteEmail, setInviteEmail] = useState('');
@@ -55,9 +57,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
   useEffect(() => {
     if (editingProperty) {
-      setTempImages(editingProperty.images || []);
+      setExistingImages((editingProperty.images || []).map((url) => ({ url, loaded: false })));
     } else {
-      setTempImages([]);
+      setExistingImages([]);
     }
     clearNewImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,8 +201,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
       const formData = new FormData(e.currentTarget);
       const priceVal = formData.get('price');
 
+      const currentUrls = existingImages.map((i) => i.url);
       const removedExistingUrls = editingProperty
-        ? (editingProperty.images || []).filter((url) => !tempImages.includes(url))
+        ? (editingProperty.images || []).filter((url) => !currentUrls.includes(url))
         : [];
 
       const newProp: Property = {
@@ -213,7 +216,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         operation: formData.get('operation') as OperationType,
         location: formData.get('location') as string,
         area: Number(formData.get('area')),
-        images: tempImages.filter(img => img && img.trim() !== ''),
+        images: currentUrls.filter(img => img && img.trim() !== ''),
         status: editingProperty?.status || PropertyStatus.ACTIVE,
         featured: formData.get('featured') === 'on'
       };
@@ -244,9 +247,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     const picked: NewImage[] = Array.from(files).map((file) => ({
       file,
       previewUrl: URL.createObjectURL(file),
+      previewLoaded: false,
     }));
 
     setNewImages((prev) => [...prev, ...picked]);
+  };
+
+  const markNewPreviewLoaded = (previewUrl: string) => {
+    setNewImages((prev) =>
+      prev.map((img) => (img.previewUrl === previewUrl ? { ...img, previewLoaded: true } : img)),
+    );
   };
 
   const removeNewFile = (index: number) => {
@@ -258,7 +268,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   };
 
   const removeExistingImage = (url: string) => {
-    setTempImages((prev) => prev.filter((u) => u !== url));
+    setExistingImages((prev) => prev.filter((i) => i.url !== url));
+  };
+
+  const markExistingLoaded = (url: string) => {
+    setExistingImages((prev) => prev.map((i) => (i.url === url ? { ...i, loaded: true } : i)));
   };
 
   if (loadingSession) {
@@ -420,18 +434,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                         </label>
                       </div>
 
-                      {(tempImages.length > 0 || newImages.length > 0) ? (
+                      {(existingImages.length > 0 || newImages.length > 0) ? (
                         <div className="space-y-4">
-                          {tempImages.length > 0 && (
+                          {existingImages.length > 0 && (
                             <div>
                               <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fotos actuales</div>
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                {tempImages.map((url) => (
-                                  <div key={url} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
-                                    <img src={url} alt="Imagen" className="w-full h-full object-cover" />
+                                {existingImages.map((img) => (
+                                  <div key={img.url} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
+                                    <img
+                                      src={img.url}
+                                      alt="Imagen"
+                                      className="w-full h-full object-cover"
+                                      onLoad={() => markExistingLoaded(img.url)}
+                                      onError={() => markExistingLoaded(img.url)}
+                                    />
+
+                                    {!img.loaded && (
+                                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                                        <div className="w-8 h-8 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                                      </div>
+                                    )}
+
                                     <button
                                       type="button"
-                                      onClick={() => removeExistingImage(url)}
+                                      onClick={() => removeExistingImage(img.url)}
                                       className={`absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity ${isProcessing ? 'pointer-events-none opacity-0' : ''}`}
                                       title="Eliminar (se borra al guardar)"
                                     >
@@ -445,13 +472,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
                           {newImages.length > 0 && (
                             <div>
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fotos nuevas (se subirán al guardar)</div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fotos nuevas</div>
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                 {newImages.map((img, idx) => (
-                                  <div key={`${img.file.name}-${idx}`} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
-                                    <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+                                  <div key={img.previewUrl} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
+                                    <img
+                                      src={img.previewUrl}
+                                      alt={img.file.name}
+                                      className="w-full h-full object-cover"
+                                      onLoad={() => markNewPreviewLoaded(img.previewUrl)}
+                                      onError={() => markNewPreviewLoaded(img.previewUrl)}
+                                    />
 
-                                    {isProcessing && (
+                                    {(!img.previewLoaded || isProcessing) && (
                                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                         <div className="w-8 h-8 border-2 border-white/60 border-t-white rounded-full animate-spin" />
                                       </div>
