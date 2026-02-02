@@ -407,7 +407,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Imágenes</label>
-                        <label className="text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline cursor-pointer">
+                        <label className={`text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline cursor-pointer ${isProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
                           + Subir fotos
                           <input
                             type="file"
@@ -415,6 +415,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                             multiple
                             className="hidden"
                             onChange={(e) => onPickFiles(e.target.files)}
+                            disabled={isProcessing}
                           />
                         </label>
                       </div>
@@ -431,7 +432,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                                     <button
                                       type="button"
                                       onClick={() => removeExistingImage(url)}
-                                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className={`absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity ${isProcessing ? 'pointer-events-none opacity-0' : ''}`}
                                       title="Eliminar (se borra al guardar)"
                                     >
                                       <span className="material-symbols-outlined text-base">close</span>
@@ -449,10 +450,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                                 {newImages.map((img, idx) => (
                                   <div key={`${img.file.name}-${idx}`} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
                                     <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+
+                                    {isProcessing && (
+                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <div className="w-8 h-8 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                                      </div>
+                                    )}
+
                                     <button
                                       type="button"
                                       onClick={() => removeNewFile(idx)}
-                                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className={`absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity ${isProcessing ? 'pointer-events-none opacity-0' : ''}`}
                                       title="Quitar"
                                     >
                                       <span className="material-symbols-outlined text-base">close</span>
@@ -476,10 +484,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     </div>
 
                     <div className="pt-6">
-                      <button type="submit" className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl uppercase tracking-widest shadow-xl hover:bg-brand-dark transition-all active:scale-95">
-                        {editingProperty ? 'Guardar Cambios' : 'Publicar'}
+                      <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl uppercase tracking-widest shadow-xl hover:bg-brand-dark transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? 'Guardando...' : (editingProperty ? 'Guardar Cambios' : 'Publicar')}
                       </button>
-                      <button type="button" onClick={() => { clearNewImages(); setShowForm(false); }} className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600">Cancelar</button>
+                      <button
+                        type="button"
+                        disabled={isProcessing}
+                        onClick={() => { clearNewImages(); setShowForm(false); }}
+                        className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        Cancelar
+                      </button>
                     </div>
                   </form>
                 </div>
