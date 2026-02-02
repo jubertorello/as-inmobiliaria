@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Property, OperationType } from '../types';
+import { googleMapsSearchUrl } from '../utils/googleMaps';
 
 interface PropertyCardProps {
   property: Property;
@@ -18,6 +18,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       default: return 'bg-gray-600';
     }
   };
+
+  const mapsUrl = googleMapsSearchUrl(property.location);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">
@@ -51,10 +53,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-brand-pink transition-colors">
           {property.title}
         </h3>
-        <p className="text-gray-500 text-sm mb-4 flex items-center">
+
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 text-sm mb-4 flex items-center hover:text-brand-pink transition-colors"
+          title="Abrir en Google Maps"
+        >
           <span className="material-symbols-outlined text-lg mr-1 text-brand-pink">location_on</span>
           {property.location}
-        </p>
+        </a>
         
         <div className="flex items-center space-x-4 mb-6 text-xs text-gray-600">
           <span className="flex items-center bg-gray-50 px-2 py-1 rounded-lg">

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { LandingContent, Property } from '../types';
 import SEO from '../components/SEO';
 import { BRAND_COLOR } from '../constants';
+import { googleMapsSearchUrl } from '../utils/googleMaps';
 
 interface PropertyDetailProps {
   properties: Property[];
@@ -41,6 +42,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
   const seoDescription = `${property.operation} de ${property.type.toLowerCase()} en ${property.location}. ${property.area}m². ${property.description.substring(0, 100)}...`;
 
   const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
+  const mapsUrl = googleMapsSearchUrl(property.location);
 
   return (
     <div className="bg-white min-h-screen">
@@ -150,10 +152,17 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
             </div>
             
             <h1 className="text-4xl md:text-5xl font-playfair text-gray-900 mb-4">{property.title}</h1>
-            <div className="flex items-center text-gray-500 mb-8">
+
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center text-gray-500 mb-8 hover:text-brand-pink transition-colors"
+              title="Abrir en Google Maps"
+            >
               <span className="material-symbols-outlined mr-2 text-brand-pink">location_on</span>
               {property.location}
-            </div>
+            </a>
 
             <div className="text-3xl font-bold mb-8 text-brand-pink">
               {property.price && property.price > 0 ? `${property.currency} ${property.price.toLocaleString()}` : 'CONSULTAR'}

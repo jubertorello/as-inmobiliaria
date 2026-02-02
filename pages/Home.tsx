@@ -5,6 +5,7 @@ import PropertyCard from '../components/PropertyCard';
 import SEO from '../components/SEO';
 import SectionHeader from '../components/SectionHeader';
 import DirectContactForm from '../components/DirectContactForm';
+import { googleMapsSearchUrl } from '../utils/googleMaps';
 
 interface HomeProps {
   properties: Property[];
@@ -19,6 +20,7 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
   })();
 
   const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
+  const officeMapsUrl = googleMapsSearchUrl(content.officeAddress);
 
   return (
     <div className="flex flex-col bg-white">
@@ -194,7 +196,15 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 block tracking-widest uppercase font-bold mb-1">Visítanos</span>
-                    <span className="text-xl font-medium">{content.officeAddress}</span>
+                    <a
+                      href={officeMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xl font-medium hover:underline"
+                      title="Abrir en Google Maps"
+                    >
+                      {content.officeAddress}
+                    </a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-6">
