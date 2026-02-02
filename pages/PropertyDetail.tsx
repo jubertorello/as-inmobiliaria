@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { LandingContent, Property } from '../types';
 import SEO from '../components/SEO';
 import { BRAND_COLOR } from '../constants';
-import { googleMapsSearchUrl } from '../utils/googleMaps';
+import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 
 interface PropertyDetailProps {
   properties: Property[];
@@ -42,7 +42,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
   const seoDescription = `${property.operation} de ${property.type.toLowerCase()} en ${property.location}. ${property.area}m². ${property.description.substring(0, 100)}...`;
 
   const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
-  const mapsUrl = googleMapsSearchUrl(property.location);
+  const mapsUrl = googleMapsUrlFromCoordsOrQuery({
+    query: property.location,
+    latitude: property.latitude ?? null,
+    longitude: property.longitude ?? null,
+  });
 
   return (
     <div className="bg-white min-h-screen">

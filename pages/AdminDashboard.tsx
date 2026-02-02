@@ -47,6 +47,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const { session, user, loading: loadingSession } = useSession();
   const isSuperAdmin = (user?.email || '').toLowerCase() === SUPER_ADMIN_EMAIL;
 
+  const parseOptionalNumber = (value: FormDataEntryValue | null): number | null => {
+    const raw = (value ?? '').toString().trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const clearNewImages = () => {
     setNewImages((prev) => {
       prev.forEach((img) => URL.revokeObjectURL(img.previewUrl));
@@ -196,6 +203,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         contactInstagram: (formData.get('contactInstagram') as string) || content.contactInstagram,
         contactFacebook: (formData.get('contactFacebook') as string) || content.contactFacebook,
         officeAddress: (formData.get('officeAddress') as string) || content.officeAddress,
+        officeLatitude: parseOptionalNumber(formData.get('officeLatitude')),
+        officeLongitude: parseOptionalNumber(formData.get('officeLongitude')),
         officeHours: (formData.get('officeHours') as string) || content.officeHours,
         footerDescription: (formData.get('footerDescription') as string) || content.footerDescription,
         seoTitle: (formData.get('seoTitle') as string) || content.seoTitle,
@@ -282,6 +291,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         type: formData.get('type') as PropertyType,
         operation: formData.get('operation') as OperationType,
         location: formData.get('location') as string,
+        latitude: parseOptionalNumber(formData.get('latitude')),
+        longitude: parseOptionalNumber(formData.get('longitude')),
         area: Number(formData.get('area')),
         images: currentUrls.filter(img => img && img.trim() !== ''),
         status: tempStatus,
@@ -497,6 +508,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                         <input name="area" type="number" placeholder="Ej: 120" defaultValue={editingProperty?.area} required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink" />
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Latitud (opcional)</label>
+                        <input
+                          name="latitude"
+                          type="number"
+                          step="any"
+                          placeholder="Ej: -31.8732766"
+                          defaultValue={editingProperty?.latitude ?? ''}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Longitud (opcional)</label>
+                        <input
+                          name="longitude"
+                          type="number"
+                          step="any"
+                          placeholder="Ej: -62.7173993"
+                          defaultValue={editingProperty?.longitude ?? ''}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400 -mt-2">
+                      Si cargás lat/lng, el link abrirá el pin exacto en Google Maps. Si lo dejás vacío, se usa la búsqueda por texto.
+                    </p>
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Descripción</label>
@@ -870,10 +910,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Horarios de Atención</label>
                     <input name="officeHours" defaultValue={content.officeHours} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink" />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Latitud oficina (opcional)</label>
+                    <input
+                      name="officeLatitude"
+                      type="number"
+                      step="any"
+                      placeholder="Ej: -31.8732766"
+                      defaultValue={content.officeLatitude ?? ''}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Longitud oficina (opcional)</label>
+                    <input
+                      name="officeLongitude"
+                      type="number"
+                      step="any"
+                      placeholder="Ej: -62.7173993"
+                      defaultValue={content.officeLongitude ?? ''}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink"
+                    />
+                  </div>
+
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pequeña Descripción Footer</label>
                     <textarea name="footerDescription" rows={3} defaultValue={content.footerDescription} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink"></textarea>
                   </div>
+
+                  <p className="text-xs text-gray-400 md:col-span-2 -mt-2">
+                    Si cargás lat/lng de la oficina, el link de la dirección abrirá el pin exacto en Google Maps.
+                  </p>
                 </div>
               )}
 

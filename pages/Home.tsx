@@ -5,7 +5,7 @@ import PropertyCard from '../components/PropertyCard';
 import SEO from '../components/SEO';
 import SectionHeader from '../components/SectionHeader';
 import DirectContactForm from '../components/DirectContactForm';
-import { googleMapsSearchUrl } from '../utils/googleMaps';
+import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 
 interface HomeProps {
   properties: Property[];
@@ -20,7 +20,11 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
   })();
 
   const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
-  const officeMapsUrl = googleMapsSearchUrl(content.officeAddress);
+  const officeMapsUrl = googleMapsUrlFromCoordsOrQuery({
+    query: content.officeAddress,
+    latitude: content.officeLatitude ?? null,
+    longitude: content.officeLongitude ?? null,
+  });
 
   return (
     <div className="flex flex-col bg-white">

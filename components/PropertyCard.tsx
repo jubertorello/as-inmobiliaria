@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Property, OperationType } from '../types';
-import { googleMapsSearchUrl } from '../utils/googleMaps';
+import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 
 interface PropertyCardProps {
   property: Property;
@@ -19,7 +19,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     }
   };
 
-  const mapsUrl = googleMapsSearchUrl(property.location);
+  const mapsUrl = googleMapsUrlFromCoordsOrQuery({
+    query: property.location,
+    latitude: property.latitude ?? null,
+    longitude: property.longitude ?? null,
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">

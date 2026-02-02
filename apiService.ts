@@ -11,6 +11,8 @@ type PropertyRow = {
   type: string;
   operation: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   area: string | number;
@@ -59,6 +61,8 @@ type LandingContentRow = {
   contact_instagram: string;
   contact_facebook: string;
   office_address: string;
+  office_latitude: number | null;
+  office_longitude: number | null;
   office_hours: string;
   footer_description: string;
   seo_title: string;
@@ -106,6 +110,8 @@ const mapRowToLandingContent = (row: LandingContentRow): LandingContent => ({
   contactInstagram: row.contact_instagram,
   contactFacebook: row.contact_facebook,
   officeAddress: row.office_address,
+  officeLatitude: row.office_latitude ?? null,
+  officeLongitude: row.office_longitude ?? null,
   officeHours: row.office_hours,
   footerDescription: row.footer_description,
   seoTitle: row.seo_title,
@@ -154,6 +160,8 @@ const mapLandingContentToRow = (content: LandingContent) => ({
   contact_instagram: content.contactInstagram,
   contact_facebook: content.contactFacebook,
   office_address: content.officeAddress,
+  office_latitude: content.officeLatitude ?? null,
+  office_longitude: content.officeLongitude ?? null,
   office_hours: content.officeHours,
   footer_description: content.footerDescription,
   seo_title: content.seoTitle,
@@ -175,6 +183,8 @@ const mapRowToProperty = (row: PropertyRow): Property => ({
   type: row.type as any,
   operation: row.operation as any,
   location: row.location,
+  latitude: row.latitude ?? null,
+  longitude: row.longitude ?? null,
   bedrooms: row.bedrooms ?? undefined,
   bathrooms: row.bathrooms ?? undefined,
   area: typeof row.area === 'string' ? Number(row.area) : row.area,
@@ -191,6 +201,8 @@ const mapPropertyToRow = (property: Property) => ({
   type: property.type,
   operation: property.operation,
   location: property.location,
+  latitude: property.latitude ?? null,
+  longitude: property.longitude ?? null,
   bedrooms: property.bedrooms ?? null,
   bathrooms: property.bathrooms ?? null,
   area: property.area,

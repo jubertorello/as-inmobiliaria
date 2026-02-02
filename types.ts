@@ -1,4 +1,3 @@
-
 export enum PropertyType {
   HOUSE = 'Casas',
   APARTMENT = 'Departamentos',
@@ -26,6 +25,8 @@ export interface Property {
   type: PropertyType;
   operation: OperationType;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   bedrooms?: number;
   bathrooms?: number;
   area: number;
@@ -78,6 +79,8 @@ export interface LandingContent {
   contactInstagram: string;
   contactFacebook: string;
   officeAddress: string;
+  officeLatitude?: number | null;
+  officeLongitude?: number | null;
   officeHours: string;
   footerDescription: string;
   // SEO
