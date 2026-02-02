@@ -221,7 +221,6 @@ async function imageToWebp(
   // If it's not an image, return as-is
   if (!file.type.startsWith('image/')) return file;
 
-  // Use createImageBitmap when available (fast, no DOM image decoding issues)
   const bitmap = await createImageBitmap(file);
 
   const scale = Math.min(1, opts.maxDimension / Math.max(bitmap.width, bitmap.height));
@@ -271,6 +270,41 @@ async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
 
   const { error } = await supabase.storage.from('property-images').remove(paths);
   if (error) throw error;
+}
+
+async function deleteAllPropertyImages(propertyId: string): Promise<void> {
+  const bucket = supabase.storage.from('property-images');
+
+  // Files are stored under: <propertyId>/<uuid>-<name>.webp
+  // We list under the propertyId folder and remove everything we find.
+  const limit = 100;
+  let offset = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await bucket.list(propertyId, {
+      limit,
+      offset,
+      sortBy: { column: 'name', order: 'asc' },
+    });
+
+    if (error) throw error;
+    const files = data || [];
+
+    if (files.length === 0) return;
+
+    const paths = files
+      .filter((f) => f.name)
+      .map((f) => `${propertyId}/${f.name}`);
+
+    if (paths.length > 0) {
+      const { error: rmErr } = await bucket.remove(paths);
+      if (rmErr) throw rmErr;
+    }
+
+    if (files.length < limit) return;
+    offset += limit;
+  }
 }
 
 async function uploadPropertyImages(propertyId: string, files: File[]): Promise<string[]> {
@@ -388,6 +422,10 @@ export const apiService = {
   },
 
   async deleteProperty(id: string): Promise<void> {
+    // Delete images from Storage first
+    await deleteAllPropertyImages(id);
+
+    // Then delete DB row
     const { error } = await supabase.from('properties').delete().eq('id', id);
     if (error) throw error;
   },
