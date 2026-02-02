@@ -214,8 +214,26 @@ function baseNameWithoutExtension(name: string) {
   return trimmed.slice(0, lastDot);
 }
 
-function isSvgFile(file: File) {
-  return file.type === 'image/svg+xml' || (file.name || '').toLowerCase().endsWith('.svg');
+function isAllowedLogoFile(file: File) {
+  const name = (file.name || '').toLowerCase();
+  const isByMime = ['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type);
+  const isByExt = name.endsWith('.svg') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
+  return isByMime || isByExt;
+}
+
+function getLogoExtensionAndContentType(file: File): { ext: 'svg' | 'png' | 'jpg'; contentType: string } {
+  const name = (file.name || '').toLowerCase();
+
+  if (file.type === 'image/svg+xml' || name.endsWith('.svg')) {
+    return { ext: 'svg', contentType: 'image/svg+xml' };
+  }
+
+  if (file.type === 'image/png' || name.endsWith('.png')) {
+    return { ext: 'png', contentType: 'image/png' };
+  }
+
+  // Default to jpeg for .jpg/.jpeg
+  return { ext: 'jpg', contentType: 'image/jpeg' };
 }
 
 function getStoragePathFromPublicUrl(publicUrl: string, bucketId: string): string | null {
@@ -238,9 +256,9 @@ async function deleteStorageObjectsByPublicUrls(bucketId: string, urls: string[]
   if (error) throw error;
 }
 
-async function uploadSiteLogoSvg(file: File): Promise<string> {
-  if (!isSvgFile(file)) {
-    throw new Error('Logo debe ser un archivo .svg');
+async function uploadSiteLogo(file: File): Promise<string> {
+  if (!isAllowedLogoFile(file)) {
+    throw new Error('Logo debe ser un archivo SVG, PNG o JPG');
   }
 
   const bucket = supabase.storage.from('site-assets');
@@ -250,11 +268,12 @@ async function uploadSiteLogoSvg(file: File): Promise<string> {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
   const base = safeFileName(baseNameWithoutExtension(file.name || 'logo')) || 'logo';
-  const path = `logo/${id}-${base}.svg`;
+  const { ext, contentType } = getLogoExtensionAndContentType(file);
+  const path = `logo/${id}-${base}.${ext}`;
 
   const { error: uploadErr } = await bucket.upload(path, file, {
     upsert: true,
-    contentType: 'image/svg+xml',
+    contentType,
   });
 
   if (uploadErr) throw uploadErr;
@@ -466,7 +485,7 @@ export const apiService = {
 
   // --- SITE ASSETS (Supabase Storage) ---
   async uploadNavbarLogoSvg(file: File, previousUrl?: string): Promise<string> {
-    const url = await uploadSiteLogoSvg(file);
+    const url = await uploadSiteLogo(file);
 
     // If it was a previous logo in our bucket, delete it to avoid orphan files
     if (previousUrl) {

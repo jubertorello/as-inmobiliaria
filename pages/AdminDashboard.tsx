@@ -34,7 +34,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [tempStatus, setTempStatus] = useState<PropertyStatus>(PropertyStatus.ACTIVE);
 
-  // Navbar logo upload (SVG)
+  // Navbar logo upload (SVG / PNG / JPG)
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [removeLogo, setRemoveLogo] = useState(false);
@@ -62,13 +62,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
   const isSiteAssetsUrl = (url: string) => url.includes('/storage/v1/object/public/site-assets/');
 
+  const isAllowedLogoFile = (file: File) => {
+    const name = (file.name || '').toLowerCase();
+    const isByMime = ['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type);
+    const isByExt = name.endsWith('.svg') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
+    return isByMime || isByExt;
+  };
+
   const pickLogo = (files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
 
-    const isSvg = file.type === 'image/svg+xml' || (file.name || '').toLowerCase().endsWith('.svg');
-    if (!isSvg) {
-      setStatus({ message: 'El logo debe ser un archivo .SVG', type: 'error' });
+    if (!isAllowedLogoFile(file)) {
+      setStatus({ message: 'El logo debe ser un archivo SVG, PNG o JPG', type: 'error' });
       return;
     }
 
@@ -199,7 +205,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         seoRobots: (formData.get('seoRobots') as string) || content.seoRobots,
       };
 
-      // Apply logo action: upload SVG / remove to fallback / keep current
+      // Apply logo action: upload / remove to fallback / keep current
       const previousLogoUrl = content.navbarLogo || '';
 
       if (removeLogo) {
@@ -669,13 +675,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
                   <div className="space-y-3 md:col-span-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Logo (SVG)</label>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Logo (SVG / PNG / JPG)</label>
                       <div className="flex items-center gap-2">
                         <label className={`text-xs font-bold uppercase tracking-widest text-brand-pink hover:underline cursor-pointer ${isProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
-                          Subir SVG
+                          Subir logo
                           <input
                             type="file"
-                            accept="image/svg+xml,.svg"
+                            accept="image/svg+xml,image/png,image/jpeg,.svg,.png,.jpg,.jpeg"
                             className="hidden"
                             disabled={isProcessing}
                             onChange={(e) => pickLogo(e.target.files)}
