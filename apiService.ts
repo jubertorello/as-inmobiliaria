@@ -299,8 +299,11 @@ async function imageToWebp(file: File): Promise<File> {
   // If it's not an image, return as-is
   if (!file.type.startsWith('image/')) return file;
 
-  // Target a much smaller size (< 1MB) to keep pages fast
-  const targetMaxBytes = 900 * 1024;
+  // Target: keep each photo well under 500KB for fast loading
+  const targetMaxBytes = 500 * 1024;
+
+  // If it's already small enough, don't recompress
+  if (file.size <= targetMaxBytes) return file;
 
   // If it's already a small webp, keep it
   if (file.type === 'image/webp' && file.size <= targetMaxBytes) return file;
@@ -314,14 +317,16 @@ async function imageToWebp(file: File): Promise<File> {
   }
 
   const attempts: Array<{ maxDimension: number; quality: number }> = [
-    { maxDimension: 1400, quality: 0.78 },
     { maxDimension: 1200, quality: 0.72 },
     { maxDimension: 1000, quality: 0.66 },
     { maxDimension: 900, quality: 0.60 },
     { maxDimension: 800, quality: 0.55 },
+    { maxDimension: 700, quality: 0.50 },
+    { maxDimension: 650, quality: 0.48 },
+    { maxDimension: 600, quality: 0.45 },
   ];
 
-  let best: { blob: Blob; w: number; h: number } | null = null;
+  let best: Blob | null = null;
 
   for (const attempt of attempts) {
     const scale = Math.min(1, attempt.maxDimension / Math.max(bitmap.width, bitmap.height));
@@ -343,12 +348,8 @@ async function imageToWebp(file: File): Promise<File> {
 
     if (!blob) continue;
 
-    // Track the smallest result
-    if (!best || blob.size < best.blob.size) {
-      best = { blob, w: targetW, h: targetH };
-    }
+    if (!best || blob.size < best.size) best = blob;
 
-    // Good enough — stop early
     if (blob.size <= targetMaxBytes) break;
   }
 
@@ -358,7 +359,7 @@ async function imageToWebp(file: File): Promise<File> {
 
   const originalBase = baseNameWithoutExtension(file.name || 'image');
   const outName = `${safeFileName(originalBase) || 'image'}.webp`;
-  return new File([best.blob], outName, { type: 'image/webp' });
+  return new File([best], outName, { type: 'image/webp' });
 }
 
 async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
