@@ -236,7 +236,8 @@ export const INITIAL_LANDING_CONTENT: LandingContent = {
   aboutExperience: '15+',
   aboutFeatures: [
     'Ventas residenciales y comerciales',
-    'Alquileres garantizados',
+    'Remates judiciales y particulares'
+    'Gestión de alquileres',
     'Tasaciones profesionales'
   ],
   contactPhone: '+54 3533 454096',
