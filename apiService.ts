@@ -214,6 +214,56 @@ function baseNameWithoutExtension(name: string) {
   return trimmed.slice(0, lastDot);
 }
 
+function isSvgFile(file: File) {
+  return file.type === 'image/svg+xml' || (file.name || '').toLowerCase().endsWith('.svg');
+}
+
+function getStoragePathFromPublicUrl(publicUrl: string, bucketId: string): string | null {
+  // Expected format:
+  // https://<project>.supabase.co/storage/v1/object/public/<bucketId>/<path>
+  const marker = `/storage/v1/object/public/${bucketId}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return publicUrl.slice(idx + marker.length);
+}
+
+async function deleteStorageObjectsByPublicUrls(bucketId: string, urls: string[]): Promise<void> {
+  const paths = urls
+    .map((u) => getStoragePathFromPublicUrl(u, bucketId))
+    .filter((p): p is string => Boolean(p));
+
+  if (paths.length === 0) return;
+
+  const { error } = await supabase.storage.from(bucketId).remove(paths);
+  if (error) throw error;
+}
+
+async function uploadSiteLogoSvg(file: File): Promise<string> {
+  if (!isSvgFile(file)) {
+    throw new Error('Logo debe ser un archivo .svg');
+  }
+
+  const bucket = supabase.storage.from('site-assets');
+
+  const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  const base = safeFileName(baseNameWithoutExtension(file.name || 'logo')) || 'logo';
+  const path = `logo/${id}-${base}.svg`;
+
+  const { error: uploadErr } = await bucket.upload(path, file, {
+    upsert: true,
+    contentType: 'image/svg+xml',
+  });
+
+  if (uploadErr) throw uploadErr;
+
+  const { data } = bucket.getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error('No se pudo obtener URL pública del logo');
+  return data.publicUrl;
+}
+
 async function imageToWebp(
   file: File,
   opts: { maxDimension: number; quality: number } = { maxDimension: 1600, quality: 0.82 },
@@ -252,24 +302,8 @@ async function imageToWebp(
   return new File([blob], outName, { type: 'image/webp' });
 }
 
-function getStoragePathFromPublicUrl(publicUrl: string): string | null {
-  // Expected format:
-  // https://<project>.supabase.co/storage/v1/object/public/property-images/<path>
-  const marker = '/storage/v1/object/public/property-images/';
-  const idx = publicUrl.indexOf(marker);
-  if (idx === -1) return null;
-  return publicUrl.slice(idx + marker.length);
-}
-
 async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
-  const paths = urls
-    .map(getStoragePathFromPublicUrl)
-    .filter((p): p is string => Boolean(p));
-
-  if (paths.length === 0) return;
-
-  const { error } = await supabase.storage.from('property-images').remove(paths);
-  if (error) throw error;
+  return deleteStorageObjectsByPublicUrls('property-images', urls);
 }
 
 async function deleteAllPropertyImages(propertyId: string): Promise<void> {
@@ -428,6 +462,22 @@ export const apiService = {
     // Then delete DB row
     const { error } = await supabase.from('properties').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  // --- SITE ASSETS (Supabase Storage) ---
+  async uploadNavbarLogoSvg(file: File, previousUrl?: string): Promise<string> {
+    const url = await uploadSiteLogoSvg(file);
+
+    // If it was a previous logo in our bucket, delete it to avoid orphan files
+    if (previousUrl) {
+      await deleteStorageObjectsByPublicUrls('site-assets', [previousUrl]);
+    }
+
+    return url;
+  },
+
+  async deleteNavbarLogo(previousUrl: string): Promise<void> {
+    await deleteStorageObjectsByPublicUrls('site-assets', [previousUrl]);
   },
 
   // --- LANDING CONTENT (Supabase) ---

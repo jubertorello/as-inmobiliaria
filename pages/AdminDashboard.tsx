@@ -34,6 +34,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [tempStatus, setTempStatus] = useState<PropertyStatus>(PropertyStatus.ACTIVE);
 
+  // Navbar logo upload (SVG)
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
+
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [allowedEmails, setAllowedEmails] = useState<Array<{ email: string; created_at: string | null }>>([]);
@@ -47,6 +52,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
       prev.forEach((img) => URL.revokeObjectURL(img.previewUrl));
       return [];
     });
+  };
+
+  const clearLogoSelection = () => {
+    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    setLogoPreviewUrl(null);
+    setLogoFile(null);
+  };
+
+  const isSiteAssetsUrl = (url: string) => url.includes('/storage/v1/object/public/site-assets/');
+
+  const pickLogo = (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+
+    const isSvg = file.type === 'image/svg+xml' || (file.name || '').toLowerCase().endsWith('.svg');
+    if (!isSvg) {
+      setStatus({ message: 'El logo debe ser un archivo .SVG', type: 'error' });
+      return;
+    }
+
+    clearLogoSelection();
+    setRemoveLogo(false);
+    setLogoFile(file);
+    setLogoPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const requestRemoveLogo = () => {
+    clearLogoSelection();
+    setRemoveLogo(true);
   };
 
   useEffect(() => {
@@ -120,6 +154,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         ...content,
         siteName: (formData.get('siteName') as string) || content.siteName,
         siteTagline: (formData.get('siteTagline') as string) || content.siteTagline,
+        // NOTE: logo is handled below (upload/remove)
         navbarLogo: (formData.get('navbarLogo') as string) || content.navbarLogo,
         heroTitle: (formData.get('heroTitle') as string) || content.heroTitle,
         heroSubtitle: (formData.get('heroSubtitle') as string) || content.heroSubtitle,
@@ -164,8 +199,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         seoRobots: (formData.get('seoRobots') as string) || content.seoRobots,
       };
 
+      // Apply logo action: upload SVG / remove to fallback / keep current
+      const previousLogoUrl = content.navbarLogo || '';
+
+      if (removeLogo) {
+        if (previousLogoUrl && isSiteAssetsUrl(previousLogoUrl)) {
+          await apiService.deleteNavbarLogo(previousLogoUrl);
+        }
+        newContent.navbarLogo = '';
+      } else if (logoFile) {
+        const prev = previousLogoUrl && isSiteAssetsUrl(previousLogoUrl) ? previousLogoUrl : undefined;
+        newContent.navbarLogo = await apiService.uploadNavbarLogoSvg(logoFile, prev);
+      }
+
       await apiService.updateLandingContent(newContent);
       setContent(newContent);
+
+      // Reset local logo UI state after saving
+      setRemoveLogo(false);
+      clearLogoSelection();
+
       setStatus({ message: 'Web actualizada exitosamente', type: 'success' });
     } catch (e) {
       setStatus({ message: 'Error al sincronizar cambios', type: 'error' });
@@ -613,9 +666,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Eslogan</label>
                     <input name="siteTagline" defaultValue={content.siteTagline} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink" />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">URL del Logo (Opcional)</label>
-                    <input name="navbarLogo" defaultValue={content.navbarLogo} placeholder="https://..." className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink" />
+
+                  <div className="space-y-3 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Logo (SVG)</label>
+                      <div className="flex items-center gap-2">
+                        <label className={`text-xs font-bold uppercase tracking-widest text-brand-pink hover:underline cursor-pointer ${isProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
+                          Subir SVG
+                          <input
+                            type="file"
+                            accept="image/svg+xml,.svg"
+                            className="hidden"
+                            disabled={isProcessing}
+                            onChange={(e) => pickLogo(e.target.files)}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          disabled={isProcessing || (!content.navbarLogo && !logoFile && !removeLogo)}
+                          onClick={requestRemoveLogo}
+                          className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="w-32 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden">
+                        {removeLogo ? (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Por defecto</span>
+                        ) : logoPreviewUrl ? (
+                          <img src={logoPreviewUrl} alt="Logo nuevo" className="max-h-full max-w-full object-contain" />
+                        ) : content.navbarLogo ? (
+                          <img src={content.navbarLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Por defecto</span>
+                        )}
+                      </div>
+
+                      <div className="text-sm text-gray-600">
+                        {removeLogo
+                          ? 'Se usará el logo por defecto.'
+                          : logoFile
+                            ? `Nuevo logo seleccionado: ${logoFile.name}`
+                            : content.navbarLogo
+                              ? 'Logo personalizado activo.'
+                              : 'Actualmente usando el logo por defecto.'}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400">
+                      Si quitás el logo, el sitio vuelve automáticamente al logo por defecto (el actual).
+                    </p>
                   </div>
                 </div>
               )}
