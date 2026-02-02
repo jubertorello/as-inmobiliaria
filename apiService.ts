@@ -295,42 +295,70 @@ async function uploadSiteLogo(file: File): Promise<string> {
   return data.publicUrl;
 }
 
-async function imageToWebp(
-  file: File,
-  opts: { maxDimension: number; quality: number } = { maxDimension: 1600, quality: 0.82 },
-): Promise<File> {
+async function imageToWebp(file: File): Promise<File> {
   // If it's not an image, return as-is
   if (!file.type.startsWith('image/')) return file;
 
-  const bitmap = await createImageBitmap(file);
+  // Target a much smaller size (< 1MB) to keep pages fast
+  const targetMaxBytes = 900 * 1024;
 
-  const scale = Math.min(1, opts.maxDimension / Math.max(bitmap.width, bitmap.height));
-  const targetW = Math.max(1, Math.round(bitmap.width * scale));
-  const targetH = Math.max(1, Math.round(bitmap.height * scale));
+  // If it's already a small webp, keep it
+  if (file.type === 'image/webp' && file.size <= targetMaxBytes) return file;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = targetW;
-  canvas.height = targetH;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    bitmap.close();
+  let bitmap: ImageBitmap | null = null;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    // Some formats (e.g., HEIC) may fail client-side conversion.
     return file;
   }
 
-  ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+  const attempts: Array<{ maxDimension: number; quality: number }> = [
+    { maxDimension: 1400, quality: 0.78 },
+    { maxDimension: 1200, quality: 0.72 },
+    { maxDimension: 1000, quality: 0.66 },
+    { maxDimension: 900, quality: 0.60 },
+    { maxDimension: 800, quality: 0.55 },
+  ];
+
+  let best: { blob: Blob; w: number; h: number } | null = null;
+
+  for (const attempt of attempts) {
+    const scale = Math.min(1, attempt.maxDimension / Math.max(bitmap.width, bitmap.height));
+    const targetW = Math.max(1, Math.round(bitmap.width * scale));
+    const targetH = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) continue;
+
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', attempt.quality),
+    );
+
+    if (!blob) continue;
+
+    // Track the smallest result
+    if (!best || blob.size < best.blob.size) {
+      best = { blob, w: targetW, h: targetH };
+    }
+
+    // Good enough — stop early
+    if (blob.size <= targetMaxBytes) break;
+  }
+
   bitmap.close();
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/webp', opts.quality),
-  );
-
-  if (!blob) return file;
+  if (!best) return file;
 
   const originalBase = baseNameWithoutExtension(file.name || 'image');
   const outName = `${safeFileName(originalBase) || 'image'}.webp`;
-
-  return new File([blob], outName, { type: 'image/webp' });
+  return new File([best.blob], outName, { type: 'image/webp' });
 }
 
 async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
