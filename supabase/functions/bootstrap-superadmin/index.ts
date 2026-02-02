@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const functionName = "bootstrap-superadmin";
 
-const corsHeaders = {
+const defaultCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
@@ -13,18 +13,49 @@ type Body = {
 };
 
 const SUPER_ADMIN_EMAIL = "julietabertorello@gmail.com";
-const SUPER_ADMIN_PASSWORD = "ASinmobiliaria!";
+
+function getCorsHeaders(req: Request) {
+  const allowedOrigin = (Deno.env.get("BOOTSTRAP_ALLOWED_ORIGIN") || "").trim();
+  if (!allowedOrigin) return defaultCorsHeaders;
+
+  const origin = (req.headers.get("Origin") || "").trim();
+  if (origin && origin === allowedOrigin) {
+    return {
+      ...defaultCorsHeaders,
+      "Access-Control-Allow-Origin": allowedOrigin,
+    };
+  }
+
+  // Non-browser / no Origin header: allow (bootstrap is intended to be called server-to-server)
+  if (!origin) {
+    return {
+      ...defaultCorsHeaders,
+      "Access-Control-Allow-Origin": allowedOrigin,
+    };
+  }
+
+  return {
+    ...defaultCorsHeaders,
+    "Access-Control-Allow-Origin": allowedOrigin,
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
     const token = (body.token || "").trim();
 
-    const expected = Deno.env.get("BOOTSTRAP_TOKEN") || "";
+    const expected = (Deno.env.get("BOOTSTRAP_TOKEN") || "").trim();
     if (!expected || token !== expected) {
       console.warn(`[${functionName}] Invalid bootstrap token`);
       return new Response("Forbidden", { status: 403, headers: corsHeaders });
@@ -38,7 +69,37 @@ serve(async (req) => {
       return new Response("Server misconfigured", { status: 500, headers: corsHeaders });
     }
 
+    const allowedOrigin = (Deno.env.get("BOOTSTRAP_ALLOWED_ORIGIN") || "").trim();
+    const origin = (req.headers.get("Origin") || "").trim();
+    if (allowedOrigin && origin && origin !== allowedOrigin) {
+      console.warn(`[${functionName}] Forbidden origin`, { origin });
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+
     const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // One-time-use guard
+    const { data: state, error: stateErr } = await service
+      .from("bootstrap_state")
+      .select("key")
+      .eq("key", "superadmin")
+      .maybeSingle();
+
+    if (stateErr) {
+      console.error(`[${functionName}] Failed reading bootstrap_state`, { stateErr });
+      return new Response(JSON.stringify({ error: stateErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (state?.key) {
+      console.warn(`[${functionName}] Refusing to run: already bootstrapped`);
+      return new Response(JSON.stringify({ error: "Bootstrap already completed" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Ensure allow-list entry exists
     const { error: allowErr } = await service
@@ -72,9 +133,25 @@ serve(async (req) => {
     );
 
     if (!existing) {
+      // Password must come from a secret (never hardcode credentials)
+      const initialPassword = (Deno.env.get("SUPER_ADMIN_INITIAL_PASSWORD") || "").trim();
+      if (!initialPassword) {
+        console.error(`[${functionName}] Missing SUPER_ADMIN_INITIAL_PASSWORD secret`);
+        return new Response(
+          JSON.stringify({
+            error:
+              "Server misconfigured: missing SUPER_ADMIN_INITIAL_PASSWORD secret (do not hardcode credentials in source control).",
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
       const { error: createErr } = await service.auth.admin.createUser({
         email: SUPER_ADMIN_EMAIL,
-        password: SUPER_ADMIN_PASSWORD,
+        password: initialPassword,
         email_confirm: true,
       });
 
@@ -86,6 +163,19 @@ serve(async (req) => {
         });
       }
 
+      // Mark bootstrap as completed (one-time-use)
+      const { error: markErr } = await service
+        .from("bootstrap_state")
+        .upsert({ key: "superadmin" });
+
+      if (markErr) {
+        console.error(`[${functionName}] Failed marking bootstrap_state`, { markErr });
+        return new Response(JSON.stringify({ error: markErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       console.log(`[${functionName}] Superadmin created`);
       return new Response(JSON.stringify({ ok: true, created: true }), {
         status: 200,
@@ -93,20 +183,21 @@ serve(async (req) => {
       });
     }
 
-    const { error: updateErr } = await service.auth.admin.updateUserById(existing.id, {
-      password: SUPER_ADMIN_PASSWORD,
-    });
+    // Do NOT reset passwords. If the user already exists, treat as done and lock bootstrap.
+    const { error: markErr } = await service
+      .from("bootstrap_state")
+      .upsert({ key: "superadmin" });
 
-    if (updateErr) {
-      console.error(`[${functionName}] updateUserById failed`, { updateErr });
-      return new Response(JSON.stringify({ error: updateErr.message }), {
-        status: 400,
+    if (markErr) {
+      console.error(`[${functionName}] Failed marking bootstrap_state`, { markErr });
+      return new Response(JSON.stringify({ error: markErr.message }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[${functionName}] Superadmin password updated`);
-    return new Response(JSON.stringify({ ok: true, created: false }), {
+    console.log(`[${functionName}] Superadmin already exists; bootstrap locked`);
+    return new Response(JSON.stringify({ ok: true, created: false, alreadyExisted: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

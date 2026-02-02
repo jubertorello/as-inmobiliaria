@@ -24,7 +24,9 @@ const BootstrapAdmin: React.FC = () => {
 
       setResult({
         type: 'success',
-        message: data?.created ? 'Superadmin creado. Ya podés iniciar sesión.' : 'Contraseña del superadmin actualizada. Ya podés iniciar sesión.',
+        message: data?.created
+          ? 'Superadmin creado. Ya podés iniciar sesión.'
+          : 'El superadmin ya existía. Bootstrap completado (no se resetean contraseñas).',
       });
     } finally {
       setLoading(false);
@@ -37,11 +39,17 @@ const BootstrapAdmin: React.FC = () => {
       <div className="bg-white p-10 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md">
         <h1 className="text-2xl font-playfair font-bold text-gray-900 text-center mb-2">Inicializar Superadmin</h1>
         <p className="text-sm text-gray-500 text-center mb-8">
-          Esto crea (o resetea) el usuario <span className="font-semibold">julietabertorello@gmail.com</span>.
+          Esto crea una única vez el usuario <span className="font-semibold">julietabertorello@gmail.com</span> y luego bloquea el bootstrap.
         </p>
 
         {result && (
-          <div className={`mb-6 rounded-2xl px-4 py-3 text-sm ${result.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+          <div
+            className={`mb-6 rounded-2xl px-4 py-3 text-sm ${
+              result.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-100'
+                : 'bg-red-50 text-red-700 border border-red-100'
+            }`}
+          >
             {result.message}
           </div>
         )}
@@ -67,7 +75,7 @@ const BootstrapAdmin: React.FC = () => {
         </form>
 
         <p className="text-xs text-gray-400 mt-6">
-          Recomendación: después de entrar, cambiá la contraseña desde Supabase o usando “Olvidé mi contraseña”.
+          Nota: la contraseña inicial ya no está hardcodeada; se toma de un secreto del servidor. Si necesitás cambiar la contraseña, hacelo desde Supabase o usando "Olvidé mi contraseña".
         </p>
       </div>
     </div>
