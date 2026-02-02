@@ -13,11 +13,21 @@ export function googleMapsUrlFromCoordsOrQuery(opts: {
   latitude?: number | null;
   longitude?: number | null;
 }): string {
-  const { query, latitude, longitude } = opts;
+  const q = (opts.query || '').trim();
+  const lat = opts.latitude;
+  const lng = opts.longitude;
 
-  if (isFiniteNumber(latitude) && isFiniteNumber(longitude)) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${latitude},${longitude}`)}`;
+  // Prefer showing the address text in Google Maps UI.
+  // If we have coords + an address, we open Maps searching by address (so it shows the address),
+  // but we also center the map near the provided coordinates.
+  if (q && isFiniteNumber(lat) && isFiniteNumber(lng)) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(q)}&ll=${encodeURIComponent(`${lat},${lng}`)}&z=17`;
   }
 
-  return googleMapsSearchUrl(query || '');
+  // If we only have coordinates, open the exact point.
+  if (isFiniteNumber(lat) && isFiniteNumber(lng)) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+  }
+
+  return googleMapsSearchUrl(q);
 }
