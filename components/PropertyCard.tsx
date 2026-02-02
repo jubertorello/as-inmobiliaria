@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Property, OperationType } from '../types';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
+import LazyImage from './LazyImage';
 
 interface PropertyCardProps {
   property: Property;
@@ -29,14 +30,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">
       <div className="relative h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50">
         {hasImages ? (
-          <img
+          <LazyImage
             src={property.images[0]}
             alt={property.title}
+            className="absolute inset-0"
+            imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800'; 
-            }}
+            fallbackSrc="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 p-8 text-center bg-gray-50">

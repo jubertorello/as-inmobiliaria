@@ -4,6 +4,7 @@ import { LandingContent, Property } from '../types';
 import SEO from '../components/SEO';
 import { BRAND_COLOR } from '../constants';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
+import LazyImage from '../components/LazyImage';
 
 interface PropertyDetailProps {
   properties: Property[];
@@ -82,7 +83,13 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
           )}
 
           <div className="relative max-w-5xl max-h-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <img src={images[activeImageIndex]} alt={property.title} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl bg-gray-900" />
+            <LazyImage
+              src={images[activeImageIndex]}
+              alt={property.title}
+              loading="eager"
+              className="max-w-full max-h-[85vh] rounded-lg shadow-2xl bg-gray-900"
+              imgClassName="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl bg-gray-900"
+            />
             <div className="mt-6 text-white/70 text-sm font-medium bg-white/10 px-4 py-1 rounded-full backdrop-blur-md">
               {activeImageIndex + 1} / {images.length}
             </div>
@@ -105,10 +112,12 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
             >
               {hasImages ? (
                 <>
-                  <img 
-                    src={images[activeImageIndex]} 
-                    alt={property.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  <LazyImage
+                    src={images[activeImageIndex]}
+                    alt={property.title}
+                    loading="eager"
+                    className="absolute inset-0"
+                    imgClassName="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {images.length > 1 && (
                     <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -142,7 +151,13 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
                       activeImageIndex === idx ? 'border-brand-pink ring-2 ring-brand-pinkLight scale-105 z-10' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                    <LazyImage
+                      src={img}
+                      alt={`Vista ${idx + 1}`}
+                      loading="lazy"
+                      className="absolute inset-0"
+                      imgClassName="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
