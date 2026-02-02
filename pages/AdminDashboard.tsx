@@ -32,6 +32,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const [tempFeatures, setTempFeatures] = useState<string[]>(content.aboutFeatures);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
+  const [tempStatus, setTempStatus] = useState<PropertyStatus>(PropertyStatus.ACTIVE);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -58,8 +59,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   useEffect(() => {
     if (editingProperty) {
       setExistingImages((editingProperty.images || []).map((url) => ({ url, loaded: false })));
+      setTempStatus(editingProperty.status);
     } else {
       setExistingImages([]);
+      setTempStatus(PropertyStatus.ACTIVE);
     }
     clearNewImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,16 +174,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     }
   };
 
-  const handleArchive = async (id: string) => {
+  const setPropertyActive = async (id: string, active: boolean) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
+
     setIsProcessing(true);
     try {
-      const updatedProp = { ...prop, status: prop.status === PropertyStatus.ACTIVE ? PropertyStatus.ARCHIVED : PropertyStatus.ACTIVE };
+      const updatedProp = { ...prop, status: active ? PropertyStatus.ACTIVE : PropertyStatus.ARCHIVED };
       const saved = await apiService.saveProperty(updatedProp);
       setProperties(prev => prev.map(p => p.id === id ? saved : p));
       setStatus({ message: 'Estado actualizado', type: 'success' });
-    } catch (e) { setStatus({ message: 'Error', type: 'error' }); } finally { setIsProcessing(false); }
+    } catch (e) {
+      setStatus({ message: 'Error', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -217,7 +225,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         location: formData.get('location') as string,
         area: Number(formData.get('area')),
         images: currentUrls.filter(img => img && img.trim() !== ''),
-        status: editingProperty?.status || PropertyStatus.ACTIVE,
+        status: tempStatus,
         featured: formData.get('featured') === 'on'
       };
 
@@ -317,13 +325,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                   <tr>
                     <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inmueble</th>
                     <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Precio</th>
-                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado</th>
+                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Activa</th>
                     <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {properties.map(p => {
                     const hasImg = p.images && p.images.length > 0 && p.images[0] !== '';
+                    const isActive = p.status === PropertyStatus.ACTIVE;
+
                     return (
                       <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-4 md:px-6 py-4">
@@ -345,14 +355,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                           {p.price && p.price > 0 ? `${p.currency} ${p.price.toLocaleString()}` : 'CONSULTAR'}
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${p.status === 'Activa' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                            {p.status}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isActive}
+                            disabled={isProcessing}
+                            onClick={() => void setPropertyActive(p.id, !isActive)}
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                              isActive ? 'bg-green-500' : 'bg-gray-300'
+                            } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            title={isActive ? 'Activa' : 'Desactivada'}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                                isActive ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                          <span className={`ml-3 text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                            {isActive ? 'Activa' : 'Desactivada'}
                           </span>
                         </td>
                         <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                           <div className="flex space-x-2">
                             <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
-                            <button onClick={() => handleArchive(p.id)} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"><span className="material-symbols-outlined">archive</span></button>
                             <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
                           </div>
                         </td>
@@ -511,7 +537,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-3 pt-4">
+                    <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4">
+                      <div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado</div>
+                        <div className="text-sm font-bold text-gray-900">{tempStatus === PropertyStatus.ACTIVE ? 'Activa' : 'Desactivada'}</div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={tempStatus === PropertyStatus.ACTIVE}
+                        disabled={isProcessing}
+                        onClick={() =>
+                          setTempStatus((prev) =>
+                            prev === PropertyStatus.ACTIVE ? PropertyStatus.ARCHIVED : PropertyStatus.ACTIVE,
+                          )
+                        }
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                          tempStatus === PropertyStatus.ACTIVE ? 'bg-green-500' : 'bg-gray-300'
+                        } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                            tempStatus === PropertyStatus.ACTIVE ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center space-x-3 pt-2">
                       <input type="checkbox" name="featured" id="featured" defaultChecked={editingProperty?.featured} className="w-5 h-5 accent-brand-pink" />
                       <label htmlFor="featured" className="text-xs font-bold text-gray-700 uppercase tracking-widest cursor-pointer">Destacar en Inicio</label>
                     </div>
