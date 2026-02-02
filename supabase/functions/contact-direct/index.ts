@@ -44,7 +44,7 @@ serve(async (req) => {
     // - RESEND_TO_EMAIL
     // - RESEND_FROM_EMAIL
     const toEmail = (Deno.env.get("RESEND_TO_EMAIL") || "novedosaoportunidad@gmail.com").trim();
-    const fromEmail = (Deno.env.get("RESEND_FROM_EMAIL") || "Andrea Sartori Web <onboarding@andreasart").trim();
+    const fromEmail = (Deno.env.get("RESEND_FROM_EMAIL") || "Andrea Sartori Web <contacto@andreasartoriinmobiliaria.com").trim();
 
     const subject = `Consulta directa - ${name} (${phone})`;
     const html = `
