@@ -313,7 +313,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
       setShowForm(false);
       clearNewImages();
     } catch (e) {
-      setStatus({ message: 'Error al guardar', type: 'error' });
+      const msg = e instanceof Error ? e.message : 'Error al guardar';
+      setStatus({ message: msg, type: 'error' });
     } finally {
       setIsProcessing(false);
     }

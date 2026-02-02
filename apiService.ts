@@ -305,18 +305,69 @@ async function imageToWebp(file: File): Promise<File> {
   // If it's already small enough, don't recompress
   if (file.size <= targetMaxBytes) return file;
 
-  // If it's already a small webp, keep it
-  if (file.type === 'image/webp' && file.size <= targetMaxBytes) return file;
+  const nameLower = (file.name || '').toLowerCase();
+  const isHeic =
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    nameLower.endsWith('.heic') ||
+    nameLower.endsWith('.heif');
 
-  let bitmap: ImageBitmap | null = null;
-  try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    // Some formats (e.g., HEIC) may fail client-side conversion.
+  // iOS/Safari can fail to encode WebP via canvas; we try WebP first and fall back to JPEG.
+  const bitmapToCanvas = async (): Promise<{ bitmap: ImageBitmap | null; img: HTMLImageElement | null }> => {
+    if (!isHeic) {
+      try {
+        const b = await createImageBitmap(file);
+        return { bitmap: b, img: null };
+      } catch {
+        // fallthrough to <img>
+      }
+    }
+
+    // Fallback: use <img> decoding (works in more browsers than createImageBitmap for some formats)
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = url;
+
+      const decodeFn = (img as any).decode;
+      if (typeof decodeFn === 'function') {
+        await decodeFn.call(img);
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('No se pudo decodificar la imagen'));
+        });
+      }
+
+      return { bitmap: null, img };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const { bitmap, img } = await bitmapToCanvas();
+  if (!bitmap && !img) {
+    // Most common case: HEIC/HEIF from iPhone photos can't be decoded in the browser.
+    if (isHeic) {
+      throw new Error(
+        'No se pudo comprimir la imagen HEIC/HEIF. En iPhone, cambiá: Ajustes → Cámara → Formatos → "Más compatible", o exportá la foto como JPG.',
+      );
+    }
+
+    console.warn('[upload] could not decode image for compression; uploading original', {
+      name: file.name,
+      type: file.type,
+      kb: Math.round(file.size / 1024),
+    });
     return file;
   }
 
+  const width = bitmap ? bitmap.width : img!.naturalWidth;
+  const height = bitmap ? bitmap.height : img!.naturalHeight;
+
   const attempts: Array<{ maxDimension: number; quality: number }> = [
+    { maxDimension: 1400, quality: 0.78 },
     { maxDimension: 1200, quality: 0.72 },
     { maxDimension: 1000, quality: 0.66 },
     { maxDimension: 900, quality: 0.60 },
@@ -326,12 +377,16 @@ async function imageToWebp(file: File): Promise<File> {
     { maxDimension: 600, quality: 0.45 },
   ];
 
+  const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
+    new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+
   let best: Blob | null = null;
+  let bestType: 'image/webp' | 'image/jpeg' = 'image/webp';
 
   for (const attempt of attempts) {
-    const scale = Math.min(1, attempt.maxDimension / Math.max(bitmap.width, bitmap.height));
-    const targetW = Math.max(1, Math.round(bitmap.width * scale));
-    const targetH = Math.max(1, Math.round(bitmap.height * scale));
+    const scale = Math.min(1, attempt.maxDimension / Math.max(width, height));
+    const targetW = Math.max(1, Math.round(width * scale));
+    const targetH = Math.max(1, Math.round(height * scale));
 
     const canvas = document.createElement('canvas');
     canvas.width = targetW;
@@ -340,26 +395,53 @@ async function imageToWebp(file: File): Promise<File> {
     const ctx = canvas.getContext('2d');
     if (!ctx) continue;
 
-    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+    if (bitmap) ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+    else ctx.drawImage(img as HTMLImageElement, 0, 0, targetW, targetH);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/webp', attempt.quality),
-    );
+    // Try WebP encoding first
+    let blob = await canvasToBlob(canvas, 'image/webp', attempt.quality);
+
+    // If WebP encoding isn't supported, Safari may return null or a different type.
+    if (!blob || (blob.type && blob.type !== 'image/webp')) {
+      const jpegBlob = await canvasToBlob(canvas, 'image/jpeg', attempt.quality);
+      if (jpegBlob) {
+        blob = jpegBlob;
+      }
+    }
 
     if (!blob) continue;
 
-    if (!best || blob.size < best.size) best = blob;
+    const nextType = blob.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+
+    if (!best || blob.size < best.size) {
+      best = blob;
+      bestType = nextType;
+    }
 
     if (blob.size <= targetMaxBytes) break;
   }
 
-  bitmap.close();
+  if (bitmap) bitmap.close();
 
   if (!best) return file;
 
   const originalBase = baseNameWithoutExtension(file.name || 'image');
-  const outName = `${safeFileName(originalBase) || 'image'}.webp`;
-  return new File([best], outName, { type: 'image/webp' });
+  const outExt = bestType === 'image/webp' ? 'webp' : 'jpg';
+  const outName = `${safeFileName(originalBase) || 'image'}.${outExt}`;
+
+  const outFile = new File([best], outName, { type: bestType });
+
+  // Debug: helps verify compression on mobile (can be removed later)
+  console.log('[upload] image compressed', {
+    originalName: file.name,
+    originalType: file.type,
+    originalKb: Math.round(file.size / 1024),
+    outName: outFile.name,
+    outType: outFile.type,
+    outKb: Math.round(outFile.size / 1024),
+  });
+
+  return outFile;
 }
 
 async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
