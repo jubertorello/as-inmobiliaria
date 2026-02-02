@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Property } from '../types';
+import { LandingContent, Property } from '../types';
 import SEO from '../components/SEO';
-import { BRAND_COLOR, INITIAL_LANDING_CONTENT } from '../constants';
+import { BRAND_COLOR } from '../constants';
 
 interface PropertyDetailProps {
   properties: Property[];
+  content: LandingContent;
 }
 
-const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties }) => {
+const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) => {
   const { id } = useParams();
   const property = properties.find(p => p.id === id);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -39,6 +39,8 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties }) => {
 
   const seoTitle = `${property.title} | ${property.operation} en ${property.location} - Andrea Sartori`;
   const seoDescription = `${property.operation} de ${property.type.toLowerCase()} en ${property.location}. ${property.area}m². ${property.description.substring(0, 100)}...`;
+
+  const contactPhoneRaw = content.contactPhone.replace(/\D/g, '');
 
   return (
     <div className="bg-white min-h-screen">
@@ -176,7 +178,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties }) => {
             <p className="text-gray-600 leading-relaxed mb-12 whitespace-pre-line">{property.description}</p>
 
             <a
-              href={`https://wa.me/${INITIAL_LANDING_CONTENT.contactPhone.replace(/\D/g, '')}?text=Hola, estoy interesado en la propiedad: ${property.title}`}
+              href={`https://wa.me/${contactPhoneRaw}?text=Hola, estoy interesado en la propiedad: ${property.title}`}
               target="_blank" rel="noopener noreferrer"
               className="w-full py-5 rounded-2xl text-white text-center font-bold uppercase tracking-[0.2em] shadow-xl bg-brand-pink hover:bg-brand-dark transition-all flex items-center justify-center space-x-3 active:scale-95"
             >

@@ -102,7 +102,7 @@ const AppContent: React.FC = () => {
           <Routes>
             <Route path="/" element={<Home properties={activeProperties} content={landingContent} />} />
             <Route path="/propiedades" element={<Properties properties={activeProperties} />} />
-            <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} />} />
+            <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} content={landingContent} />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/bootstrap" element={<BootstrapAdmin />} />
             <Route
