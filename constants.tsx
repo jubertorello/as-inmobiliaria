@@ -1,4 +1,3 @@
-
 import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from './types';
 
 export const BRAND_COLOR = '#D95FA2'; 
@@ -238,7 +237,7 @@ export const INITIAL_LANDING_CONTENT: LandingContent = {
     'Ventas residenciales y comerciales',
     'Remates judiciales y particulares',
     'Gestión de alquileres',
-    'Tasaciones profesionales'
+    'Tasaciones profesionales',
   ],
   contactPhone: '+54 3533 454096',
   contactEmail: 'andrea_sartori@hotmail.com',
