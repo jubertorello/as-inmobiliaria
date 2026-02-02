@@ -198,6 +198,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     try {
       const formData = new FormData(e.currentTarget);
       const priceVal = formData.get('price');
+
+      const removedExistingUrls = editingProperty
+        ? (editingProperty.images || []).filter((url) => !tempImages.includes(url))
+        : [];
+
       const newProp: Property = {
         id: editingProperty?.id ?? '',
         title: formData.get('title') as string,
@@ -213,7 +218,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         featured: formData.get('featured') === 'on'
       };
 
-      const saved = await apiService.saveProperty(newProp, newImages.map((i) => i.file));
+      const saved = await apiService.saveProperty(
+        newProp,
+        newImages.map((i) => i.file),
+        removedExistingUrls,
+      );
 
       if (editingProperty) setProperties(prev => prev.map(p => p.id === editingProperty.id ? saved : p));
       else setProperties(prev => [saved, ...prev]);
@@ -423,7 +432,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                                       type="button"
                                       onClick={() => removeExistingImage(url)}
                                       className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
-                                      title="Quitar"
+                                      title="Eliminar (se borra al guardar)"
                                     >
                                       <span className="material-symbols-outlined text-base">close</span>
                                     </button>

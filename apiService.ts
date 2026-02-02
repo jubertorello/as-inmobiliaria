@@ -207,6 +207,26 @@ function safeFileName(name: string) {
     .replace(/[^a-z0-9._-]/g, '');
 }
 
+function getStoragePathFromPublicUrl(publicUrl: string): string | null {
+  // Expected format:
+  // https://<project>.supabase.co/storage/v1/object/public/property-images/<path>
+  const marker = '/storage/v1/object/public/property-images/';
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return publicUrl.slice(idx + marker.length);
+}
+
+async function deletePropertyImagesByPublicUrls(urls: string[]): Promise<void> {
+  const paths = urls
+    .map(getStoragePathFromPublicUrl)
+    .filter((p): p is string => Boolean(p));
+
+  if (paths.length === 0) return;
+
+  const { error } = await supabase.storage.from('property-images').remove(paths);
+  if (error) throw error;
+}
+
 async function uploadPropertyImages(propertyId: string, files: File[]): Promise<string[]> {
   if (!files.length) return [];
 
@@ -268,7 +288,11 @@ export const apiService = {
     return data ? mapRowToProperty(data as PropertyRow) : undefined;
   },
 
-  async saveProperty(property: Property, newImageFiles: File[] = []): Promise<Property> {
+  async saveProperty(
+    property: Property,
+    newImageFiles: File[] = [],
+    removedImageUrls: string[] = [],
+  ): Promise<Property> {
     const baseRow = mapPropertyToRow(property);
 
     // If this is an existing UUID, keep it; otherwise let DB generate a UUID.
@@ -290,6 +314,11 @@ export const apiService = {
     if (saveErr) throw saveErr;
 
     const saved = mapRowToProperty(savedRow as PropertyRow);
+
+    // If admin removed existing images, delete them from Storage too
+    if (removedImageUrls.length > 0) {
+      await deletePropertyImagesByPublicUrls(removedImageUrls);
+    }
 
     // Upload any newly selected files and then update the property images array
     if (newImageFiles.length > 0) {
