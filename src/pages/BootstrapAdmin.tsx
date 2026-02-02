@@ -3,6 +3,19 @@ import SEO from '../../components/SEO';
 import { supabase } from '../integrations/supabase/client';
 
 const BootstrapAdmin: React.FC = () => {
+  // Extra safety: even if someone manually adds the route back, keep this page disabled in production.
+  if (import.meta.env.PROD) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center bg-gray-50 px-4 py-12">
+        <SEO title="Not Found" robots="noindex" />
+        <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-md text-center">
+          <h1 className="text-2xl font-playfair font-bold text-gray-900">Página no disponible</h1>
+          <p className="text-sm text-gray-500 mt-2">Bootstrap está deshabilitado en producción.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [token, setToken] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);

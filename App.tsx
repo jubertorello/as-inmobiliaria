@@ -104,7 +104,7 @@ const AppContent: React.FC = () => {
             <Route path="/propiedades" element={<Properties properties={activeProperties} />} />
             <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} content={landingContent} />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/bootstrap" element={<BootstrapAdmin />} />
+            {import.meta.env.DEV ? <Route path="/bootstrap" element={<BootstrapAdmin />} /> : null}
             <Route
               path="/admin"
               element={
