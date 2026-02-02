@@ -16,6 +16,8 @@ interface AdminDashboardProps {
   setContent: React.Dispatch<React.SetStateAction<LandingContent>>;
 }
 
+type NewImage = { file: File; previewUrl: string };
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, setProperties, content, setContent }) => {
   const [activeTab, setActiveTab] = useState<'properties' | 'content' | 'users'>('properties');
   const [contentSubTab, setContentSubTab] = useState<'brand' | 'hero' | 'services' | 'sections' | 'about' | 'footer' | 'seo'>('brand');
@@ -27,6 +29,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
 
   const [tempFeatures, setTempFeatures] = useState<string[]>(content.aboutFeatures);
   const [tempImages, setTempImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<NewImage[]>([]);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -35,6 +38,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
   const navigate = useNavigate();
   const { session, user, loading: loadingSession } = useSession();
   const isSuperAdmin = (user?.email || '').toLowerCase() === SUPER_ADMIN_EMAIL;
+
+  const clearNewImages = () => {
+    setNewImages((prev) => {
+      prev.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+      return [];
+    });
+  };
 
   useEffect(() => {
     if (status) {
@@ -47,8 +57,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     if (editingProperty) {
       setTempImages(editingProperty.images || []);
     } else {
-      setTempImages(['']);
+      setTempImages([]);
     }
+    clearNewImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingProperty, showForm]);
 
   useEffect(() => {
@@ -201,20 +213,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         featured: formData.get('featured') === 'on'
       };
 
-      const saved = await apiService.saveProperty(newProp);
+      const saved = await apiService.saveProperty(newProp, newImages.map((i) => i.file));
 
       if (editingProperty) setProperties(prev => prev.map(p => p.id === editingProperty.id ? saved : p));
       else setProperties(prev => [saved, ...prev]);
 
       setStatus({ message: 'Propiedad guardada', type: 'success' });
-      setEditingProperty(null); setShowForm(false);
-    } catch (e) { setStatus({ message: 'Error al guardar', type: 'error' }); } finally { setIsProcessing(false); }
+      setEditingProperty(null);
+      setShowForm(false);
+      clearNewImages();
+    } catch (e) {
+      setStatus({ message: 'Error al guardar', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const updateImage = (idx: number, val: string) => {
-    const next = [...tempImages];
-    next[idx] = val;
-    setTempImages(next);
+  const onPickFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const picked: NewImage[] = Array.from(files).map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setNewImages((prev) => [...prev, ...picked]);
+  };
+
+  const removeNewFile = (index: number) => {
+    setNewImages((prev) => {
+      const img = prev[index];
+      if (img) URL.revokeObjectURL(img.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const removeExistingImage = (url: string) => {
+    setTempImages((prev) => prev.filter((u) => u !== url));
   };
 
   if (loadingSession) {
@@ -361,18 +396,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                     </div>
 
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Imágenes (URLs)</label>
-                        <button type="button" onClick={() => setTempImages([...tempImages, ''])} className="text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline">+ Añadir</button>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Imágenes</label>
+                        <label className="text-brand-pink text-xs font-bold uppercase tracking-widest hover:underline cursor-pointer">
+                          + Subir fotos
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => onPickFiles(e.target.files)}
+                          />
+                        </label>
                       </div>
-                      <div className="space-y-2">
-                        {tempImages.map((img, i) => (
-                          <div key={i} className="flex space-x-2">
-                            <input value={img} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." className="flex-grow bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-brand-pink" />
-                            <button type="button" onClick={() => setTempImages(tempImages.filter((_, idx) => idx !== i))} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><span className="material-symbols-outlined">delete</span></button>
-                          </div>
-                        ))}
-                      </div>
+
+                      {(tempImages.length > 0 || newImages.length > 0) ? (
+                        <div className="space-y-4">
+                          {tempImages.length > 0 && (
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fotos actuales</div>
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                {tempImages.map((url) => (
+                                  <div key={url} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
+                                    <img src={url} alt="Imagen" className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeExistingImage(url)}
+                                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Quitar"
+                                    >
+                                      <span className="material-symbols-outlined text-base">close</span>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {newImages.length > 0 && (
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fotos nuevas (se subirán al guardar)</div>
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                {newImages.map((img, idx) => (
+                                  <div key={`${img.file.name}-${idx}`} className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 aspect-square">
+                                    <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeNewFile(idx)}
+                                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-600 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Quitar"
+                                    >
+                                      <span className="material-symbols-outlined text-base">close</span>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                          Todavía no hay fotos. Subí una o más imágenes desde tu dispositivo.
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-3 pt-4">
@@ -384,7 +470,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                       <button type="submit" className="w-full py-4 bg-brand-pink text-white font-bold rounded-xl uppercase tracking-widest shadow-xl hover:bg-brand-dark transition-all active:scale-95">
                         {editingProperty ? 'Guardar Cambios' : 'Publicar'}
                       </button>
-                      <button type="button" onClick={() => setShowForm(false)} className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600">Cancelar</button>
+                      <button type="button" onClick={() => { clearNewImages(); setShowForm(false); }} className="w-full py-3 text-gray-400 font-bold uppercase text-xs mt-2 hover:text-gray-600">Cancelar</button>
                     </div>
                   </form>
                 </div>

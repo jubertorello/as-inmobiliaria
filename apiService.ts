@@ -199,6 +199,41 @@ const mapPropertyToRow = (property: Property) => ({
   featured: property.featured,
 });
 
+function safeFileName(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9._-]/g, '');
+}
+
+async function uploadPropertyImages(propertyId: string, files: File[]): Promise<string[]> {
+  if (!files.length) return [];
+
+  const bucket = supabase.storage.from('property-images');
+  const uploadedUrls: string[] = [];
+
+  for (const file of files) {
+    const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const path = `${propertyId}/${id}-${safeFileName(file.name || 'image')}`;
+
+    const { error: uploadErr } = await bucket.upload(path, file, {
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+
+    if (uploadErr) throw uploadErr;
+
+    const { data } = bucket.getPublicUrl(path);
+    if (data?.publicUrl) uploadedUrls.push(data.publicUrl);
+  }
+
+  return uploadedUrls;
+}
+
 export const apiService = {
   // --- PROPERTIES (Supabase) ---
   async getProperties(): Promise<Property[]> {
@@ -233,13 +268,14 @@ export const apiService = {
     return data ? mapRowToProperty(data as PropertyRow) : undefined;
   },
 
-  async saveProperty(property: Property): Promise<Property> {
+  async saveProperty(property: Property, newImageFiles: File[] = []): Promise<Property> {
     const baseRow = mapPropertyToRow(property);
 
     // If this is an existing UUID, keep it; otherwise let DB generate a UUID.
     const shouldSendId = property.id && isUuid(property.id);
 
-    const { data, error } = shouldSendId
+    // First save property (to ensure we have an ID for uploads)
+    const { data: savedRow, error: saveErr } = shouldSendId
       ? await supabase
           .from('properties')
           .upsert({ id: property.id, ...baseRow })
@@ -251,8 +287,27 @@ export const apiService = {
           .select('*')
           .single();
 
-    if (error) throw error;
-    return mapRowToProperty(data as PropertyRow);
+    if (saveErr) throw saveErr;
+
+    const saved = mapRowToProperty(savedRow as PropertyRow);
+
+    // Upload any newly selected files and then update the property images array
+    if (newImageFiles.length > 0) {
+      const uploadedUrls = await uploadPropertyImages(saved.id, newImageFiles);
+      const nextImages = [...(saved.images || []), ...uploadedUrls];
+
+      const { data: updatedRow, error: updErr } = await supabase
+        .from('properties')
+        .update({ images: nextImages })
+        .eq('id', saved.id)
+        .select('*')
+        .single();
+
+      if (updErr) throw updErr;
+      return mapRowToProperty(updatedRow as PropertyRow);
+    }
+
+    return saved;
   },
 
   async deleteProperty(id: string): Promise<void> {
