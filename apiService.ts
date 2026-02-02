@@ -207,6 +207,52 @@ function safeFileName(name: string) {
     .replace(/[^a-z0-9._-]/g, '');
 }
 
+function baseNameWithoutExtension(name: string) {
+  const trimmed = name.trim();
+  const lastDot = trimmed.lastIndexOf('.');
+  if (lastDot <= 0) return trimmed;
+  return trimmed.slice(0, lastDot);
+}
+
+async function imageToWebp(
+  file: File,
+  opts: { maxDimension: number; quality: number } = { maxDimension: 1600, quality: 0.82 },
+): Promise<File> {
+  // If it's not an image, return as-is
+  if (!file.type.startsWith('image/')) return file;
+
+  // Use createImageBitmap when available (fast, no DOM image decoding issues)
+  const bitmap = await createImageBitmap(file);
+
+  const scale = Math.min(1, opts.maxDimension / Math.max(bitmap.width, bitmap.height));
+  const targetW = Math.max(1, Math.round(bitmap.width * scale));
+  const targetH = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    bitmap.close();
+    return file;
+  }
+
+  ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/webp', opts.quality),
+  );
+
+  if (!blob) return file;
+
+  const originalBase = baseNameWithoutExtension(file.name || 'image');
+  const outName = `${safeFileName(originalBase) || 'image'}.webp`;
+
+  return new File([blob], outName, { type: 'image/webp' });
+}
+
 function getStoragePathFromPublicUrl(publicUrl: string): string | null {
   // Expected format:
   // https://<project>.supabase.co/storage/v1/object/public/property-images/<path>
@@ -234,15 +280,17 @@ async function uploadPropertyImages(propertyId: string, files: File[]): Promise<
   const uploadedUrls: string[] = [];
 
   for (const file of files) {
+    const converted = await imageToWebp(file);
+
     const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    const path = `${propertyId}/${id}-${safeFileName(file.name || 'image')}`;
+    const path = `${propertyId}/${id}-${safeFileName(converted.name || 'image.webp')}`;
 
-    const { error: uploadErr } = await bucket.upload(path, file, {
+    const { error: uploadErr } = await bucket.upload(path, converted, {
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: converted.type || 'image/webp',
     });
 
     if (uploadErr) throw uploadErr;
