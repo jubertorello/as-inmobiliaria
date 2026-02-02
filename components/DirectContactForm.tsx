@@ -23,11 +23,28 @@ const DirectContactForm: React.FC = () => {
 
     setSending(true);
     try {
-      const { error } = await supabase.functions.invoke('contact-direct', {
+      const { data, error } = await supabase.functions.invoke('contact-direct', {
         body: { name: cleanName, phone: cleanPhone, message: cleanMessage },
       });
 
       if (error) {
+        const contextBody = (error as any)?.context?.body;
+        const providerStatus = contextBody?.providerStatus;
+        const providerBody = contextBody?.providerBody;
+
+        const detail =
+          typeof providerBody === 'string' && providerBody.trim()
+            ? providerBody
+            : error.message;
+
+        setStatus({
+          type: 'error',
+          text: `No pudimos enviar el mensaje. ${providerStatus ? `(Resend ${providerStatus}) ` : ''}${detail}`,
+        });
+        return;
+      }
+
+      if (!(data as any)?.ok) {
         setStatus({ type: 'error', text: 'No pudimos enviar el mensaje. Intentá nuevamente.' });
         return;
       }

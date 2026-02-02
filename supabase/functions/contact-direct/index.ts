@@ -44,7 +44,7 @@ serve(async (req) => {
     // - RESEND_TO_EMAIL
     // - RESEND_FROM_EMAIL
     const toEmail = (Deno.env.get("RESEND_TO_EMAIL") || "novedosaoportunidad@gmail.com").trim();
-    const fromEmail = (Deno.env.get("RESEND_FROM_EMAIL") || "Andrea Sartori Web <contacto@andreasartoriinmobiliaria.com").trim();
+    const fromEmail = (Deno.env.get("RESEND_FROM_EMAIL") || "Andrea Sartori Web <onboarding@resend.dev>").trim();
 
     const subject = `Consulta directa - ${name} (${phone})`;
     const html = `
@@ -74,10 +74,18 @@ serve(async (req) => {
     if (!resendResp.ok) {
       const text = await resendResp.text().catch(() => "");
       console.error(`[${functionName}] Resend error`, { status: resendResp.status, text });
-      return new Response(JSON.stringify({ error: "Failed to send email" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Failed to send email",
+          provider: "resend",
+          providerStatus: resendResp.status,
+          providerBody: text,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     console.log(`[${functionName}] Email sent`, { toEmail });
