@@ -236,7 +236,7 @@ export const INITIAL_LANDING_CONTENT: LandingContent = {
   aboutExperience: '15+',
   aboutFeatures: [
     'Ventas residenciales y comerciales',
-    'Remates judiciales y particulares'
+    'Remates judiciales y particulares',
     'Gestión de alquileres',
     'Tasaciones profesionales'
   ],
