@@ -5,6 +5,7 @@ import SEO from '../components/SEO';
 import { useSession } from '../src/components/SessionProvider';
 import { supabase } from '../src/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import heic2any from 'heic2any';
 
 const SUPER_ADMIN_EMAIL = 'julietabertorello@gmail.com';
 
@@ -320,16 +321,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
     }
   };
 
-  const onPickFiles = (files: FileList | null) => {
+  const isHeicFile = (file: File) => {
+    const nameLower = (file.name || '').toLowerCase();
+    return (
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      nameLower.endsWith('.heic') ||
+      nameLower.endsWith('.heif')
+    );
+  };
+
+  const baseNameWithoutExtension = (name: string) => {
+    const trimmed = name.trim();
+    const lastDot = trimmed.lastIndexOf('.');
+    if (lastDot <= 0) return trimmed;
+    return trimmed.slice(0, lastDot);
+  };
+
+  const onPickFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const picked: NewImage[] = Array.from(files).map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      previewLoaded: false,
-    }));
+    const picked: NewImage[] = [];
 
-    setNewImages((prev) => [...prev, ...picked]);
+    for (const original of Array.from(files)) {
+      let file = original;
+
+      // Convert HEIC/HEIF to JPEG so previews won't look broken and uploads work across browsers
+      if (isHeicFile(file)) {
+        try {
+          const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+          const blob = Array.isArray(out) ? out[0] : out;
+          const base = baseNameWithoutExtension(file.name || 'image');
+          file = new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+        } catch {
+          setStatus({
+            message:
+              'No se pudo convertir la foto HEIC. Probá convertirla a JPG antes de subirla (en iPhone: Ajustes → Cámara → Formatos → "Más compatible").',
+            type: 'error',
+          });
+          continue;
+        }
+      }
+
+      picked.push({
+        file,
+        previewUrl: URL.createObjectURL(file),
+        previewLoaded: false,
+      });
+    }
+
+    if (picked.length > 0) {
+      setNewImages((prev) => [...prev, ...picked]);
+    }
   };
 
   const markNewPreviewLoaded = (previewUrl: string) => {
@@ -554,7 +597,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                             accept="image/*"
                             multiple
                             className="hidden"
-                            onChange={(e) => onPickFiles(e.target.files)}
+                            onChange={(e) => void onPickFiles(e.target.files)}
                             disabled={isProcessing}
                           />
                         </label>

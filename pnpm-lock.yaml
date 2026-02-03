@@ -20,6 +20,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.93.3
         version: 2.93.3
+      heic2any:
+        specifier: ^0.0.4
+        version: 0.0.4
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -713,6 +716,9 @@ packages:
   gtoken@8.0.0:
     resolution: {integrity: sha512-+CqsMbHPiSTdtSO14O51eMNlrp9N79gmeqmXeouJOhfucAedHw9noVe/n5uJk3tbKE6a+6ZCQg3RPhVhHByAIw==}
     engines: {node: '>=18'}
+
+  heic2any@0.0.4:
+    resolution: {integrity: sha512-3lLnZiDELfabVH87htnRolZ2iehX9zwpRyGNz22GKXIu0fznlblf0/ftppXKNqS26dqFSeqfIBhAmAj/uSp0cA==}
 
   https-proxy-agent@7.0.6:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
@@ -1611,6 +1617,8 @@ snapshots:
       jws: 4.0.1
     transitivePeerDependencies:
       - supports-color
+
+  heic2any@0.0.4: {}
 
   https-proxy-agent@7.0.6:
     dependencies:

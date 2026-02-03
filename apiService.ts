@@ -1,6 +1,7 @@
 import { Property, LandingContent, PropertyStatus } from './types';
 import { INITIAL_LANDING_CONTENT } from './constants';
 import { supabase } from './src/integrations/supabase/client';
+import heic2any from 'heic2any';
 
 type PropertyRow = {
   id: string;
@@ -295,37 +296,61 @@ async function uploadSiteLogo(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+function isHeicFile(file: File) {
+  const nameLower = (file.name || '').toLowerCase();
+  return (
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    nameLower.endsWith('.heic') ||
+    nameLower.endsWith('.heif')
+  );
+}
+
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const base = baseNameWithoutExtension(file.name || 'image');
+  try {
+    const out = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9,
+    });
+
+    const blob = Array.isArray(out) ? out[0] : out;
+    return new File([blob], `${safeFileName(base) || 'image'}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    throw new Error(
+      'No se pudo convertir la imagen HEIC/HEIF. Probá convertirla a JPG antes de subirla (en iPhone: Ajustes → Cámara → Formatos → "Más compatible").',
+    );
+  }
+}
+
 async function imageToWebp(file: File): Promise<File> {
   // If it's not an image, return as-is
   if (!file.type.startsWith('image/')) return file;
 
-  const nameLower = (file.name || '').toLowerCase();
-  const isHeic =
-    file.type === 'image/heic' ||
-    file.type === 'image/heif' ||
-    nameLower.endsWith('.heic') ||
-    nameLower.endsWith('.heif');
+  // HEIC/HEIF often breaks in browsers; convert to JPEG first
+  let working = file;
+  if (isHeicFile(working)) {
+    working = await convertHeicToJpeg(working);
+  }
 
   // Target: keep each photo well under 500KB for fast loading
   const targetMaxBytes = 200 * 1024;
 
-  // If it's already small enough, don't recompress.
-  // IMPORTANT: except for HEIC/HEIF, because many browsers can't display it (it would look like a broken image).
-  if (!isHeic && file.size <= targetMaxBytes) return file;
+  // If it's already small enough, don't recompress
+  if (working.size <= targetMaxBytes) return working;
 
   // iOS/Safari can fail to encode WebP via canvas; we try WebP first and fall back to JPEG.
   const bitmapToCanvas = async (): Promise<{ bitmap: ImageBitmap | null; img: HTMLImageElement | null }> => {
-    if (!isHeic) {
-      try {
-        const b = await createImageBitmap(file);
-        return { bitmap: b, img: null };
-      } catch {
-        // fallthrough to <img>
-      }
+    try {
+      const b = await createImageBitmap(working);
+      return { bitmap: b, img: null };
+    } catch {
+      // fallthrough to <img>
     }
 
     // Fallback: use <img> decoding (works in more browsers than createImageBitmap for some formats)
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(working);
     try {
       const img = new Image();
       img.decoding = 'async';
@@ -349,19 +374,12 @@ async function imageToWebp(file: File): Promise<File> {
 
   const { bitmap, img } = await bitmapToCanvas();
   if (!bitmap && !img) {
-    // Most common case: HEIC/HEIF from iPhone photos can't be decoded in the browser.
-    if (isHeic) {
-      throw new Error(
-        'No se pudo comprimir la imagen HEIC/HEIF. En iPhone, cambiá: Ajustes → Cámara → Formatos → "Más compatible", o exportá la foto como JPG.',
-      );
-    }
-
     console.warn('[upload] could not decode image for compression; uploading original', {
-      name: file.name,
-      type: file.type,
-      kb: Math.round(file.size / 1024),
+      name: working.name,
+      type: working.type,
+      kb: Math.round(working.size / 1024),
     });
-    return file;
+    return working;
   }
 
   const width = bitmap ? bitmap.width : img!.naturalWidth;
@@ -426,9 +444,9 @@ async function imageToWebp(file: File): Promise<File> {
 
   if (bitmap) bitmap.close();
 
-  if (!best) return file;
+  if (!best) return working;
 
-  const originalBase = baseNameWithoutExtension(file.name || 'image');
+  const originalBase = baseNameWithoutExtension(working.name || 'image');
   const outExt = bestType === 'image/webp' ? 'webp' : 'jpg';
   const outName = `${safeFileName(originalBase) || 'image'}.${outExt}`;
 
@@ -436,9 +454,9 @@ async function imageToWebp(file: File): Promise<File> {
 
   // Debug: helps verify compression on mobile (can be removed later)
   console.log('[upload] image compressed', {
-    originalName: file.name,
-    originalType: file.type,
-    originalKb: Math.round(file.size / 1024),
+    originalName: working.name,
+    originalType: working.type,
+    originalKb: Math.round(working.size / 1024),
     outName: outFile.name,
     outType: outFile.type,
     outKb: Math.round(outFile.size / 1024),
