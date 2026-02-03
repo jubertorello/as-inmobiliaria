@@ -6,6 +6,50 @@ import SEO from "../../components/SEO";
 
 type AuthView = 'sign_in' | 'forgotten_password' | 'update_password';
 
+type PasswordFieldProps = {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  showPassword: boolean;
+  onToggleShow: () => void;
+  autoComplete: string;
+};
+
+const PasswordField: React.FC<PasswordFieldProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  showPassword,
+  onToggleShow,
+  autoComplete,
+}) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="relative">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-6 pr-14 py-4 text-gray-900 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+      />
+      <button
+        type="button"
+        onClick={onToggleShow}
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-white transition-colors"
+        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        title={showPassword ? 'Ocultar' : 'Mostrar'}
+      >
+        <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+      </button>
+    </div>
+  </div>
+);
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { session, loading } = useSession();
@@ -123,37 +167,6 @@ const LoginPage: React.FC = () => {
     );
   }
 
-  const PasswordField = (props: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder: string;
-  }) => (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{props.label}</label>
-      <div className="relative">
-        <input
-          type={showPassword ? 'text' : 'password'}
-          required
-          value={props.value}
-          onChange={(e) => props.onChange(e.target.value)}
-          placeholder={props.placeholder}
-          autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
-          className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-6 pr-14 py-4 text-gray-900 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-white transition-colors"
-          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          title={showPassword ? 'Ocultar' : 'Mostrar'}
-        >
-          <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 px-4 py-12">
       <SEO title="Iniciar Sesión" robots="noindex" />
@@ -199,6 +212,9 @@ const LoginPage: React.FC = () => {
               value={password}
               onChange={setPassword}
               placeholder="Tu contraseña"
+              showPassword={showPassword}
+              onToggleShow={() => setShowPassword((v) => !v)}
+              autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
             />
 
             <button
@@ -243,6 +259,9 @@ const LoginPage: React.FC = () => {
               value={newPassword}
               onChange={setNewPassword}
               placeholder="Tu nueva contraseña"
+              showPassword={showPassword}
+              onToggleShow={() => setShowPassword((v) => !v)}
+              autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
             />
 
             <button
