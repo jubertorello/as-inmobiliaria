@@ -300,7 +300,7 @@ async function imageToWebp(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) return file;
 
   // Target: keep each photo well under 500KB for fast loading
-  const targetMaxBytes = 500 * 1024;
+  const targetMaxBytes = 200 * 1024;
 
   // If it's already small enough, don't recompress
   if (file.size <= targetMaxBytes) return file;
