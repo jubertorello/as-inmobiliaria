@@ -299,18 +299,19 @@ async function imageToWebp(file: File): Promise<File> {
   // If it's not an image, return as-is
   if (!file.type.startsWith('image/')) return file;
 
-  // Target: keep each photo well under 500KB for fast loading
-  const targetMaxBytes = 200 * 1024;
-
-  // If it's already small enough, don't recompress
-  if (file.size <= targetMaxBytes) return file;
-
   const nameLower = (file.name || '').toLowerCase();
   const isHeic =
     file.type === 'image/heic' ||
     file.type === 'image/heif' ||
     nameLower.endsWith('.heic') ||
     nameLower.endsWith('.heif');
+
+  // Target: keep each photo well under 500KB for fast loading
+  const targetMaxBytes = 200 * 1024;
+
+  // If it's already small enough, don't recompress.
+  // IMPORTANT: except for HEIC/HEIF, because many browsers can't display it (it would look like a broken image).
+  if (!isHeic && file.size <= targetMaxBytes) return file;
 
   // iOS/Safari can fail to encode WebP via canvas; we try WebP first and fall back to JPEG.
   const bitmapToCanvas = async (): Promise<{ bitmap: ImageBitmap | null; img: HTMLImageElement | null }> => {

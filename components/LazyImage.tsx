@@ -19,10 +19,12 @@ const LazyImage: React.FC<Props> = ({
 }) => {
   const [loaded, setLoaded] = React.useState(false);
   const [currentSrc, setCurrentSrc] = React.useState(src || '');
+  const [hasError, setHasError] = React.useState(false);
   const triedFallbackRef = React.useRef(false);
 
   React.useEffect(() => {
     setLoaded(false);
+    setHasError(false);
     setCurrentSrc(src || '');
     triedFallbackRef.current = false;
   }, [src]);
@@ -31,13 +33,17 @@ const LazyImage: React.FC<Props> = ({
     if (fallbackSrc && !triedFallbackRef.current) {
       triedFallbackRef.current = true;
       setLoaded(false);
+      setHasError(false);
       setCurrentSrc(fallbackSrc);
       return;
     }
+
+    // Hide the broken <img> icon and show a placeholder instead
+    setHasError(true);
     setLoaded(true); // stop spinner
   };
 
-  const showImg = Boolean(currentSrc);
+  const showImg = Boolean(currentSrc) && !hasError;
 
   return (
     <div className={`relative overflow-hidden ${className || ''}`}>
