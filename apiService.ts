@@ -367,14 +367,16 @@ async function imageToWebp(file: File): Promise<File> {
   const height = bitmap ? bitmap.height : img!.naturalHeight;
 
   const attempts: Array<{ maxDimension: number; quality: number }> = [
-    { maxDimension: 1400, quality: 0.78 },
-    { maxDimension: 1200, quality: 0.72 },
-    { maxDimension: 1000, quality: 0.66 },
-    { maxDimension: 900, quality: 0.60 },
-    { maxDimension: 800, quality: 0.55 },
-    { maxDimension: 700, quality: 0.50 },
-    { maxDimension: 650, quality: 0.48 },
-    { maxDimension: 600, quality: 0.45 },
+    { maxDimension: 1200, quality: 0.65 },
+    { maxDimension: 1000, quality: 0.55 },
+    { maxDimension: 900, quality: 0.50 },
+    { maxDimension: 800, quality: 0.45 },
+    { maxDimension: 700, quality: 0.40 },
+    { maxDimension: 600, quality: 0.35 },
+    { maxDimension: 550, quality: 0.32 },
+    { maxDimension: 500, quality: 0.30 },
+    { maxDimension: 450, quality: 0.28 },
+    { maxDimension: 400, quality: 0.26 },
   ];
 
   const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
