@@ -1,5 +1,5 @@
-import { Property } from "./types";
-import { supabase } from "./src/integrations/supabase/client";
+import { Property } from "../types/types";
+import { supabase } from "../integrations/supabase/client";
 
 type GeminiChatResponse = {
   text?: string;

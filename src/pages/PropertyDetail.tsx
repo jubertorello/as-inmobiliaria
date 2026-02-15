@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { LandingContent, Property } from '../types';
+import { LandingContent, Property } from '../types/types';
 import SEO from '../components/SEO';
-import { BRAND_COLOR } from '../constants';
+import { BRAND_COLOR } from '../constants/constants';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 import LazyImage from '../components/LazyImage';
 

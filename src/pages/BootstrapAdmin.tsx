@@ -1,5 +1,5 @@
 import React from 'react';
-import SEO from '../../components/SEO';
+import SEO from '../components/SEO';
 import { supabase } from '../integrations/supabase/client';
 
 const BootstrapAdmin: React.FC = () => {
@@ -57,11 +57,10 @@ const BootstrapAdmin: React.FC = () => {
 
         {result && (
           <div
-            className={`mb-6 rounded-2xl px-4 py-3 text-sm ${
-              result.type === 'success'
+            className={`mb-6 rounded-2xl px-4 py-3 text-sm ${result.type === 'success'
                 ? 'bg-green-50 text-green-700 border border-green-100'
                 : 'bg-red-50 text-red-700 border border-red-100'
-            }`}
+              }`}
           >
             {result.message}
           </div>

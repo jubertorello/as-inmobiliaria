@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PropertyType, OperationType } from '../types';
+import { PropertyType, OperationType } from '../types/types';
 
 interface PropertyFiltersProps {
   search: string;

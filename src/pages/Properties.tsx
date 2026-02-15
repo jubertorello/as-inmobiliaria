@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Property, PropertyType, OperationType, LandingContent } from '../types';
+import { Property, PropertyType, OperationType, LandingContent } from '../types/types';
 import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
 import SectionHeader from '../components/SectionHeader';
 import SEO from '../components/SEO';
-import { apiService } from '../apiService';
+import { apiService } from '../services/apiService';
 
 interface PropertiesProps {
   properties: Property[];
@@ -29,9 +29,9 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
       // Filtros básicos
       const matchType = filterType === 'All' || p.type === filterType;
       const matchOp = filterOp === 'All' || p.operation === filterOp;
-      const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || 
-                          p.location.toLowerCase().includes(search.toLowerCase());
-      
+      const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
+        p.location.toLowerCase().includes(search.toLowerCase());
+
       // Filtro de Moneda
       const matchCurrency = filterCurrency === 'All' || p.currency === filterCurrency;
 
@@ -45,7 +45,7 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
         // Las propiedades "A CONSULTAR" se ocultan si hay un rango numérico activo
         // a menos que el usuario esté buscando un rango que empiece en 0.
         if (isConsultar) {
-          matchPrice = false; 
+          matchPrice = false;
         } else {
           const min = minPrice !== '' ? parseFloat(minPrice) : 0;
           const max = maxPrice !== '' ? parseFloat(maxPrice) : Infinity;
@@ -57,29 +57,44 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
     });
   }, [properties, filterType, filterOp, search, minPrice, maxPrice, filterCurrency]);
 
+  // Preload first 3 images for faster initial render
+  useEffect(() => {
+    const firstThree = filtered.slice(0, 3);
+    firstThree.forEach(property => {
+      const firstImage = property.images?.find(img => typeof img === 'string' && img.trim() !== '');
+      if (firstImage) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = firstImage;
+        document.head.appendChild(link);
+      }
+    });
+  }, [filtered]);
+
   if (!content) return <div className="min-h-screen bg-gray-50"></div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <SEO 
+      <SEO
         title={`${content.propertiesTitle} | ${content.siteName}`}
         description={content.seoDescription}
         keywords={content.seoKeywords}
       />
-      
+
       <div className="max-w-7xl mx-auto">
-        <SectionHeader 
-          title={content.propertiesTitle} 
-          subtitle={content.propertiesSubtitle} 
+        <SectionHeader
+          title={content.propertiesTitle}
+          subtitle={content.propertiesSubtitle}
           centered={false}
         />
 
-        <PropertyFilters 
-          search={search} 
-          setSearch={setSearch} 
-          filterType={filterType} 
-          setFilterType={setFilterType} 
-          filterOp={filterOp} 
+        <PropertyFilters
+          search={search}
+          setSearch={setSearch}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          filterOp={filterOp}
           setFilterOp={setFilterOp}
           minPrice={minPrice}
           setMinPrice={setMinPrice}
@@ -105,12 +120,12 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
             <p className="text-gray-500 text-lg font-medium mb-2">No encontramos resultados para tu búsqueda.</p>
             <p className="text-gray-400 text-sm mb-8">Prueba ajustando los filtros o el rango de precio.</p>
             <button
-              onClick={() => { 
-                setFilterType('All'); 
-                setFilterOp('All'); 
-                setSearch(''); 
-                setMinPrice(''); 
-                setMaxPrice(''); 
+              onClick={() => {
+                setFilterType('All');
+                setFilterOp('All');
+                setSearch('');
+                setMinPrice('');
+                setMaxPrice('');
                 setFilterCurrency('All');
               }}
               className="px-8 py-3 bg-brand-pink text-white font-bold rounded-2xl uppercase tracking-widest text-[10px] shadow-lg hover:bg-brand-dark transition-all"
