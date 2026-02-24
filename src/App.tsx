@@ -8,7 +8,6 @@ import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import { SessionProvider, useSession } from './components/SessionProvider';
 import LoginPage from './pages/LoginPage';
-import BootstrapAdmin from './pages/BootstrapAdmin';
 import ScrollToTop from './components/ScrollToTop';
 import PageLoader from './components/PageLoader';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,12 +17,6 @@ const Home = lazy(() => import('./pages/Home'));
 const Properties = lazy(() => import('./pages/Properties'));
 const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-
-
-
-
-
-
 
 const AppContent: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -73,7 +66,6 @@ const AppContent: React.FC = () => {
             <Route path="/propiedades" element={<Properties properties={activeProperties} />} />
             <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} content={landingContent} />} />
             <Route path="/login" element={<LoginPage />} />
-            {import.meta.env.DEV ? <Route path="/bootstrap" element={<BootstrapAdmin />} /> : null}
             <Route
               path="/admin"
               element={
