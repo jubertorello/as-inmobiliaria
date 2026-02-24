@@ -1,13 +1,7 @@
-<<<<<<< HEAD:apiService.ts
-import { Property, LandingContent, PropertyStatus } from './types';
-import { INITIAL_LANDING_CONTENT } from './constants';
-import { supabase } from './src/integrations/supabase/client';
-import heic2any from 'heic2any';
-=======
 import { Property, LandingContent, PropertyStatus } from '../types/types';
 import { INITIAL_LANDING_CONTENT } from '../constants/constants';
 import { supabase } from '../integrations/supabase/client';
->>>>>>> b7525f1115598d1c894c15f68a1415e84a59134c:src/services/apiService.ts
+import heic2any from 'heic2any';
 
 type PropertyRow = {
   id: string;
@@ -343,22 +337,8 @@ async function imageToWebp(file: File): Promise<File> {
   // Target: keep each photo well under 500KB for fast loading
   const targetMaxBytes = 200 * 1024;
 
-<<<<<<< HEAD:apiService.ts
   // If it's already small enough, don't recompress
   if (working.size <= targetMaxBytes) return working;
-=======
-  // If it's already WebP and small enough, return as-is.
-  if (file.type === 'image/webp' && file.size <= targetMaxBytes) return file;
-
-  // Otherwise, we proceed to convert to WebP (standardization).
-
-  const nameLower = (file.name || '').toLowerCase();
-  const isHeic =
-    file.type === 'image/heic' ||
-    file.type === 'image/heif' ||
-    nameLower.endsWith('.heic') ||
-    nameLower.endsWith('.heif');
->>>>>>> b7525f1115598d1c894c15f68a1415e84a59134c:src/services/apiService.ts
 
   // iOS/Safari can fail to encode WebP via canvas; we try WebP first and fall back to JPEG.
   const bitmapToCanvas = async (): Promise<{ bitmap: ImageBitmap | null; img: HTMLImageElement | null }> => {

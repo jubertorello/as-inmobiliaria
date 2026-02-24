@@ -153,8 +153,8 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
             <LazyImage
               src={content.aboutImage}
               alt="Andrea Sartori"
-              className="rounded-3xl shadow-2xl aspect-[4/5] object-cover bg-gray-100"
-              imgClassName="object-cover"
+              className="rounded-3xl shadow-2xl aspect-[4/5] bg-gray-100"
+              imgClassName="object-cover w-full h-full"
             />
 
             {/* Mobile badge */}

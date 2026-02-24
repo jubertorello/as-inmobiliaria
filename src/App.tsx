@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-// Compatibility re-export.
-// Some tooling and conventions expect the app entry component at src/App.tsx.
-export { default } from '../App';
-=======
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Property, LandingContent } from './types/types';
@@ -115,4 +110,3 @@ const App: React.FC = () => {
 };
 
 export default App;
->>>>>>> b7525f1115598d1c894c15f68a1415e84a59134c
