@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Property, Message } from '../types/types';
-import { getAIResponse } from '../geminiService';
+import { getAIResponse } from '../services/geminiService';
 import { BRAND_COLOR } from '../constants/constants';
 
 interface ChatbotProps {
