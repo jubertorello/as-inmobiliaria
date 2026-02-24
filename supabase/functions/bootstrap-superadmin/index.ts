@@ -53,6 +53,24 @@ async function sha256(input: string) {
   return arr.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function verifyJWT(token: string, supabaseUrl: string, supabaseServiceRoleKey: string): Promise<{ isValid: boolean; email?: string }> {
+  try {
+    const service = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: { persistSession: false },
+    });
+
+    const { data, error } = await service.auth.getUser(token);
+    
+    if (error) {
+      return { isValid: false };
+    }
+
+    return { isValid: true, email: data.user?.email };
+  } catch (error) {
+    return { isValid: false };
+  }
+}
+
 serve(async (req) => {
   const origin = (req.headers.get("Origin") || "").trim();
   const allowedOrigin = (Deno.env.get("BOOTSTRAP_ALLOWED_ORIGIN") || "").trim();
@@ -91,6 +109,17 @@ serve(async (req) => {
     // Rate limit (best effort) by IP hash.
     const body = (await req.json().catch(() => ({}))) as Body;
     const token = (body.token || "").trim();
+
+    // Validate JWT token if provided
+    let jwtEmail: string | undefined;
+    if (token) {
+      const jwtValidation = await verifyJWT(token, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      if (!jwtValidation.isValid) {
+        console.warn(`[${functionName}] Invalid JWT token`);
+        return new Response("Forbidden", { status: 403, headers: corsHeaders });
+      }
+      jwtEmail = jwtValidation.email;
+    }
 
     const expected = (Deno.env.get("BOOTSTRAP_TOKEN") || "").trim();
     // Use an optional dedicated salt, fallback to expected token (secret) to avoid adding a new required secret.
