@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Property, OperationType } from '../types';
+import { Property, OperationType } from '../types/types';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 import LazyImage from './LazyImage';
 
@@ -9,7 +9,22 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
-  const hasImages = property.images && property.images.length > 0 && property.images[0] !== '';
+  const firstImage = React.useMemo(() => {
+    return property.images?.find(img => typeof img === 'string' && img.trim() !== '');
+  }, [property.images]);
+
+  const hasImages = Boolean(firstImage);
+
+  // Optimize Unsplash images if no params present
+  const imageUrl = React.useMemo(() => {
+    if (!hasImages || !firstImage) return '';
+    const src = firstImage;
+    if (src.includes('unsplash.com') && !src.includes('w=')) {
+      const separator = src.includes('?') ? '&' : '?';
+      return `${src}${separator}auto=format&fit=crop&q=75&w=800`;
+    }
+    return src;
+  }, [firstImage, hasImages]);
 
   const getBadgeColor = (op: OperationType) => {
     switch (op) {
@@ -31,12 +46,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       <div className="relative h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50">
         {hasImages ? (
           <LazyImage
-            src={property.images[0]}
+            src={imageUrl}
             alt={property.title}
             className="absolute inset-0"
             imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-            fallbackSrc="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800"
+            loading="eager"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 p-8 text-center bg-gray-50">
@@ -44,7 +58,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] leading-relaxed">Imagen no disponible</span>
           </div>
         )}
-        
+
         <div className={`absolute top-4 left-4 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm ${getBadgeColor(property.operation)}`}>
           {property.operation}
         </div>
@@ -68,7 +82,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           <span className="material-symbols-outlined text-lg mr-1 text-brand-pink">location_on</span>
           {property.location}
         </a>
-        
+
         <div className="flex items-center space-x-4 mb-6 text-xs text-gray-600">
           <span className="flex items-center bg-gray-50 px-2 py-1 rounded-lg">
             <span className="font-bold mr-1">{property.area}</span> m²
@@ -84,8 +98,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           <div className="flex flex-col">
             <span className="text-[8px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Precio</span>
             <span className="text-xl font-bold text-brand-pink">
-              {property.price && property.price > 0 
-                ? `${property.currency} ${property.price.toLocaleString()}` 
+              {property.price && property.price > 0
+                ? `${property.currency} ${property.price.toLocaleString()}`
                 : 'CONSULTAR'}
             </span>
           </div>

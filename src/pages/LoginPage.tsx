@@ -2,7 +2,7 @@ import React from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../components/SessionProvider';
-import SEO from "../../components/SEO";
+import SEO from "../components/SEO";
 
 type AuthView = 'sign_in' | 'forgotten_password' | 'update_password';
 
@@ -182,11 +182,10 @@ const LoginPage: React.FC = () => {
 
         {status && (
           <div
-            className={`mb-6 rounded-2xl px-4 py-3 text-sm border ${
-              status.type === 'success'
-                ? 'bg-green-50 text-green-700 border-green-100'
-                : 'bg-red-50 text-red-700 border-red-100'
-            }`}
+            className={`mb-6 rounded-2xl px-4 py-3 text-sm border ${status.type === 'success'
+              ? 'bg-green-50 text-green-700 border-green-100'
+              : 'bg-red-50 text-red-700 border-red-100'
+              }`}
           >
             {status.text}
           </div>
@@ -213,8 +212,13 @@ const LoginPage: React.FC = () => {
               onChange={setPassword}
               placeholder="Tu contraseña"
               showPassword={showPassword}
+<<<<<<< HEAD
               onToggleShow={() => setShowPassword((v) => !v)}
               autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
+=======
+              setShowPassword={setShowPassword}
+              view={view}
+>>>>>>> b7525f1115598d1c894c15f68a1415e84a59134c
             />
 
             <button
@@ -260,8 +264,13 @@ const LoginPage: React.FC = () => {
               onChange={setNewPassword}
               placeholder="Tu nueva contraseña"
               showPassword={showPassword}
+<<<<<<< HEAD
               onToggleShow={() => setShowPassword((v) => !v)}
               autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
+=======
+              setShowPassword={setShowPassword}
+              view={view}
+>>>>>>> b7525f1115598d1c894c15f68a1415e84a59134c
             />
 
             <button
@@ -305,5 +314,51 @@ const LoginPage: React.FC = () => {
     </div>
   );
 };
+
+const PasswordField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  showPassword,
+  setShowPassword,
+  view,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  showPassword: boolean;
+  setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
+  view: AuthView;
+}) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={view === 'update_password' ? 'new-password' : 'current-password'}
+        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-6 pr-14 py-4 text-gray-900 outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-white transition-colors"
+        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        title={showPassword ? 'Ocultar' : 'Mostrar'}
+      >
+        <span className="material-symbols-outlined">
+          {showPassword ? 'visibility_off' : 'visibility'}
+        </span>
+      </button>
+    </div>
+  </div>
+);
 
 export default LoginPage;

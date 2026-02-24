@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LandingContent } from '../types';
-import { BRAND_COLOR, SECONDARY_COLOR } from '../constants';
+import { LandingContent } from '../types/types';
+import { BRAND_COLOR, SECONDARY_COLOR } from '../constants/constants';
 
 interface FooterProps {
   content: LandingContent;

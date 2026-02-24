@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabase } from '../src/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 import TurnstileWidget from './TurnstileWidget';
 
 const turnstileSiteKey = (import.meta as any).env?.VITE_TURNSTILE_SITE_KEY as string | undefined;

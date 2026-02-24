@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
 
-const SUPER_ADMIN_EMAIL = 'julietabertorello@gmail.com';
+const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL?.toLowerCase();
 
 interface SessionContextType {
   session: Session | null;

@@ -1,6 +1,6 @@
-import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from './types';
+import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from '../types/types';
 
-export const BRAND_COLOR = '#D95FA2'; 
+export const BRAND_COLOR = '#D95FA2';
 export const SECONDARY_COLOR = '#532759';
 
 export const INITIAL_PROPERTIES: Property[] = [
@@ -17,7 +17,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 4,
     area: 280,
     images: [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=75&w=800'
     ],
     status: PropertyStatus.ACTIVE,
     featured: true
@@ -35,7 +35,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 1,
     area: 55,
     images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: true
@@ -51,7 +51,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     location: 'Periferia, Las Varillas',
     area: 1200,
     images: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -68,7 +68,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 2,
     area: 110,
     images: [
-      'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -86,7 +86,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 1,
     area: 32,
     images: [
-      'https://images.unsplash.com/photo-1536376074432-ad7374f6bd2a?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1536376074432-ad7374f6bd2a?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: true
@@ -104,7 +104,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 1,
     area: 180,
     images: [
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -120,7 +120,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     location: 'Zona Rural, Las Varillas',
     area: 500000,
     images: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -137,7 +137,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 2,
     area: 85,
     images: [
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: true
@@ -155,7 +155,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 2,
     area: 95,
     images: [
-      'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -173,7 +173,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 2,
     area: 120,
     images: [
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: true
@@ -191,7 +191,7 @@ export const INITIAL_PROPERTIES: Property[] = [
     bathrooms: 3,
     area: 2500,
     images: [
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1200'
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=60&w=600'
     ],
     status: PropertyStatus.ACTIVE,
     featured: false
@@ -201,7 +201,7 @@ export const INITIAL_PROPERTIES: Property[] = [
 export const INITIAL_LANDING_CONTENT: LandingContent = {
   siteName: 'ANDREA SARTORI',
   siteTagline: 'INMOBILIARIA',
-  navbarLogo: '', 
+  navbarLogo: '',
   heroTitle: 'Encuentra tu lugar ideal para vivir o invertir',
   heroSubtitle: 'Acompañándote en cada paso de tu próxima inversión o alquiler en Las Varillas.',
   heroImage: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1920',
@@ -231,7 +231,7 @@ export const INITIAL_LANDING_CONTENT: LandingContent = {
   aboutTitle: 'Excelencia en servicios inmobiliarios',
   aboutDescription1: 'En Andrea Sartori Inmobiliaria, entendemos que buscar una propiedad es mucho más que una transacción comercial.',
   aboutDescription2: 'Nuestro equipo está comprometido en brindar un asesoramiento integral y transparente.',
-  aboutImage: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800',
+  aboutImage: 'https://images.unsplash.com/photo-1460317442991-0ec239f3fd6a?auto=format&fit=crop&q=80&w=1200',
   aboutExperience: '15+',
   aboutFeatures: [
     'Ventas residenciales y comerciales',

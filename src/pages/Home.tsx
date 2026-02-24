@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Property, LandingContent } from '../types';
+import { Property, LandingContent } from '../types/types';
 import PropertyCard from '../components/PropertyCard';
 import SEO from '../components/SEO';
 import SectionHeader from '../components/SectionHeader';
 import DirectContactForm from '../components/DirectContactForm';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
+
+import LazyImage from '../components/LazyImage';
 
 interface HomeProps {
   properties: Property[];
@@ -28,15 +30,18 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
 
   return (
     <div className="flex flex-col bg-white">
-      <SEO 
+      <SEO
         title={content.seoTitle}
         description={content.seoDescription}
         keywords={content.seoKeywords}
         image={content.ogImage}
       />
-      
+
       {/* Hero Section */}
-      <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
+      <section
+        className="relative overflow-hidden"
+        style={{ height: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
         <div className="absolute inset-0">
           <img
             src={content.heroImage}
@@ -45,18 +50,18 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
           />
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
-        
+
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="overflow-hidden mb-6 py-4 -my-4">
             <h1 className="text-4xl md:text-7xl font-playfair text-white leading-[1.15] drop-shadow-lg opacity-0 animate-title-reveal">
               {content.heroTitle}
             </h1>
           </div>
-          
+
           <p className="text-xl md:text-2xl text-white/90 mb-10 font-light drop-shadow-md opacity-0 animate-fade-up delay-500">
             {content.heroSubtitle}
           </p>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 opacity-0 animate-scale-in delay-700">
             <Link
               to="/propiedades"
@@ -78,9 +83,9 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
       {/* Featured Properties */}
       <section className="py-24 px-4 bg-gray-50/50">
         <div className="max-w-7xl mx-auto">
-          <SectionHeader 
-            title={content.featuredTitle} 
-            subtitle={content.featuredSubtitle} 
+          <SectionHeader
+            title={content.featuredTitle}
+            subtitle={content.featuredSubtitle}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -104,9 +109,9 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
       {/* Services Section */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <SectionHeader 
-            title={content.servicesTitle} 
-            subtitle={content.servicesSubtitle} 
+          <SectionHeader
+            title={content.servicesTitle}
+            subtitle={content.servicesSubtitle}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -124,9 +129,9 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
                     {sDesc}
                   </p>
                   {num === 3 && content.apartHotelLink && (
-                    <a 
-                      href={content.apartHotelLink} 
-                      target="_blank" 
+                    <a
+                      href={content.apartHotelLink}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="mt-6 inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-brand-pink hover:underline"
                     >
@@ -145,11 +150,11 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
       <section className="py-24 px-4 bg-white border-t border-gray-50">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="relative">
-            <img
+            <LazyImage
               src={content.aboutImage}
               alt="Andrea Sartori"
-              loading="lazy"
-              className="rounded-3xl shadow-2xl aspect-[4/5] object-cover"
+              className="rounded-3xl shadow-2xl aspect-[4/5] object-cover bg-gray-100"
+              imgClassName="object-cover"
             />
 
             {/* Mobile badge */}
@@ -182,7 +187,7 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
           </div>
         </div>
       </section>
-      
+
       {/* Contact Section */}
       <section id="contacto" className="py-24 px-4 text-white bg-brand-dark">
         <div className="max-w-7xl mx-auto">
@@ -192,7 +197,7 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
               <p className="text-white/60 text-lg mb-12 max-w-lg leading-relaxed">
                 Nuestra misión es brindarte la tranquilidad que necesitas en cada transacción inmobiliaria.
               </p>
-              
+
               <div className="space-y-8">
                 <div className="flex items-start space-x-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">

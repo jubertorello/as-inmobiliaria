@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BRAND_COLOR, SECONDARY_COLOR } from '../constants';
-import { LandingContent } from '../types';
-import { useSession } from '../src/components/SessionProvider'; // Import useSession
-import { supabase } from '../src/integrations/supabase/client'; // Import supabase client
+import { BRAND_COLOR, SECONDARY_COLOR } from '../constants/constants';
+import { LandingContent } from '../types/types';
+import { useSession } from '../components/SessionProvider'; // Import useSession
+import { supabase } from '../integrations/supabase/client'; // Import supabase client
 
 interface NavbarProps {
   isAdmin: boolean;

@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Property, Message } from '../types';
+import { Property, Message } from '../types/types';
 import { getAIResponse } from '../geminiService';
-import { BRAND_COLOR } from '../constants';
+import { BRAND_COLOR } from '../constants/constants';
 
 interface ChatbotProps {
   properties: Property[];

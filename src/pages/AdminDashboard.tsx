@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from '../types';
-import { apiService } from '../apiService';
+import { Property, PropertyType, OperationType, PropertyStatus, LandingContent } from '../types/types';
+import { apiService } from '../services/apiService';
 import SEO from '../components/SEO';
-import { useSession } from '../src/components/SessionProvider';
-import { supabase } from '../src/integrations/supabase/client';
+import { useSession } from '../components/SessionProvider';
+import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import heic2any from 'heic2any';
 
@@ -414,93 +414,166 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
-          <h1 className="text-3xl sm:text-4xl font-playfair text-gray-900">Gestión Andrea Sartori</h1>
-          <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto scrollbar-hide">
-            <button onClick={() => setActiveTab('properties')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'properties' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Propiedades</button>
-            <button onClick={() => setActiveTab('content')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'content' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Web</button>
+      <div className="max-w-7xl mx-auto overflow-hidden">
+        <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <h1 className="text-2xl sm:text-4xl font-playfair text-gray-900 text-center md:text-left">Gestión Andrea Sartori</h1>
+          <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto max-w-full">
+            <button onClick={() => setActiveTab('properties')} className={`flex-1 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'properties' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Propiedades</button>
+            <button onClick={() => setActiveTab('content')} className={`flex-1 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'content' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Web</button>
             {isSuperAdmin && (
-              <button onClick={() => setActiveTab('users')} className={`whitespace-nowrap px-4 sm:px-6 md:px-8 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'users' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Usuarios</button>
+              <button onClick={() => setActiveTab('users')} className={`flex-1 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${activeTab === 'users' ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-brand-pink'}`}>Usuarios</button>
             )}
           </div>
         </header>
 
         {activeTab === 'properties' ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <h2 className="text-xl font-bold text-gray-800">Listado Maestro</h2>
-              <button onClick={() => { setEditingProperty(null); setShowForm(true); }} className="bg-brand-pink text-white px-6 py-3 rounded-xl text-xs font-bold uppercase shadow-lg hover:bg-brand-dark transition-all">Nueva Propiedad</button>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-800">Listado Maestro</h2>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full">{properties.length} Props</span>
+              </div>
+              <button onClick={() => { setEditingProperty(null); setShowForm(true); }} className="w-full md:w-auto bg-brand-pink text-white px-6 py-3 rounded-xl text-xs font-bold uppercase shadow-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-lg">add</span>
+                Nueva Propiedad
+              </button>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inmueble</th>
-                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Precio</th>
-                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Activa</th>
-                    <th className="px-4 md:px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {properties.map(p => {
-                    const hasImg = p.images && p.images.length > 0 && p.images[0] !== '';
-                    const isActive = p.status === PropertyStatus.ACTIVE;
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Mobile View: Cards */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {properties.map(p => {
+                  const hasImg = p.images && p.images.length > 0 && p.images[0] !== '';
+                  const isActive = p.status === PropertyStatus.ACTIVE;
 
-                    return (
-                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-4 md:px-6 py-4">
-                          <div className="flex items-center space-x-4">
-                            {hasImg ? (
-                              <img src={p.images[0]} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                                <span className="material-symbols-outlined text-lg">hide_image</span>
+                  return (
+                    <div key={p.id} className="p-4 flex gap-4">
+                      {/* Image Thumbnail */}
+                      <div className="flex-shrink-0">
+                        {hasImg ? (
+                          <img src={p.images[0]} className="w-20 h-20 rounded-xl object-cover shadow-sm bg-gray-100" />
+                        ) : (
+                          <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                            <span className="material-symbols-outlined text-2xl">hide_image</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-grow min-w-0 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-bold text-gray-900 line-clamp-1">{p.title}</h3>
+                          <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-0.5">
+                            {p.type} · {p.operation}
+                          </div>
+                          <div className="text-sm font-bold text-gray-900 mt-1">
+                            {p.price && p.price > 0 ? `${p.currency} ${p.price.toLocaleString()}` : 'CONSULTAR'}
+                          </div>
+                        </div>
+
+                        {/* Actions Row */}
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                              {isActive ? 'Activa' : 'Inactiva'}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isActive}
+                              disabled={isProcessing}
+                              onClick={() => void setPropertyActive(p.id, !isActive)}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isActive ? 'bg-green-500' : 'bg-gray-300'
+                                } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            >
+                              <span
+                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-4' : 'translate-x-0.5'
+                                  }`}
+                              />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined text-xl">edit</span></button>
+                            <button onClick={() => handleDelete(p.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined text-xl">delete</span></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inmueble</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Precio</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Activa</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {properties.map(p => {
+                      const hasImg = p.images && p.images.length > 0 && p.images[0] !== '';
+                      const isActive = p.status === PropertyStatus.ACTIVE;
+
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-4">
+                              {hasImg ? (
+                                <img src={p.images[0]} className="w-12 h-12 rounded-xl object-cover shadow-sm bg-gray-100" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                                  <span className="material-symbols-outlined text-lg">hide_image</span>
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <span className="font-bold text-gray-900 block line-clamp-1">{p.title}</span>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{p.type} · {p.operation}</span>
                               </div>
-                            )}
-                            <div className="min-w-0">
-                              <span className="font-bold text-gray-900 block line-clamp-1">{p.title}</span>
-                              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">{p.type} · {p.operation}</span>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 md:px-6 py-4 font-bold text-gray-800 whitespace-nowrap">
-                          {p.price && p.price > 0 ? `${p.currency} ${p.price.toLocaleString()}` : 'CONSULTAR'}
-                        </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={isActive}
-                            disabled={isProcessing}
-                            onClick={() => void setPropertyActive(p.id, !isActive)}
-                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                              isActive ? 'bg-green-500' : 'bg-gray-300'
-                            } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                            title={isActive ? 'Activa' : 'Desactivada'}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                                isActive ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                          <span className={`ml-3 text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
-                            {isActive ? 'Activa' : 'Desactivada'}
-                          </span>
-                        </td>
-                        <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                          <div className="flex space-x-2">
-                            <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
-                            <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-6 py-4 font-bold text-gray-800 whitespace-nowrap">
+                            {p.price && p.price > 0 ? `${p.currency} ${p.price.toLocaleString()}` : 'CONSULTAR'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-3">
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isActive}
+                                disabled={isProcessing}
+                                onClick={() => void setPropertyActive(p.id, !isActive)}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${isActive ? 'bg-green-500' : 'bg-gray-300'
+                                  } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                title={isActive ? 'Activa' : 'Desactivada'}
+                              >
+                                <span
+                                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                              </button>
+                              <span className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                                {isActive ? 'Activa' : 'Desactivada'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex space-x-2">
+                              <button onClick={() => { setEditingProperty(p); setShowForm(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><span className="material-symbols-outlined">edit</span></button>
+                              <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {showForm && (
@@ -695,14 +768,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                             prev === PropertyStatus.ACTIVE ? PropertyStatus.ARCHIVED : PropertyStatus.ACTIVE,
                           )
                         }
-                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                          tempStatus === PropertyStatus.ACTIVE ? 'bg-green-500' : 'bg-gray-300'
-                        } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${tempStatus === PropertyStatus.ACTIVE ? 'bg-green-500' : 'bg-gray-300'
+                          } ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            tempStatus === PropertyStatus.ACTIVE ? 'translate-x-6' : 'translate-x-1'
-                          }`}
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${tempStatus === PropertyStatus.ACTIVE ? 'translate-x-6' : 'translate-x-1'
+                            }`}
                         />
                       </button>
                     </div>
@@ -852,7 +923,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ isAdmin, properties, se
                       <input name="servicesSubtitle" defaultValue={content.servicesSubtitle} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-brand-pink" />
                     </div>
                   </div>
-                  
+
                   {[1, 2, 3].map(num => (
                     <div key={num} className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
                       <h4 className="text-xs font-bold uppercase tracking-widest text-brand-pink">Servicio {num}</h4>
