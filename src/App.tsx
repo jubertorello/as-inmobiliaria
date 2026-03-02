@@ -17,6 +17,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Properties = lazy(() => import('./pages/Properties'));
 const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 
 const AppContent: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -65,6 +66,7 @@ const AppContent: React.FC = () => {
             <Route path="/" element={<Home properties={activeProperties} content={landingContent} />} />
             <Route path="/propiedades" element={<Properties properties={activeProperties} />} />
             <Route path="/propiedad/:id" element={<PropertyDetail properties={activeProperties} content={landingContent} />} />
+            <Route path="/privacidad" element={<PrivacyPolicy />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/admin"
