@@ -50,6 +50,7 @@ const DirectContactForm: React.FC = () => {
           message: cleanMessage,
           website,
           turnstileToken: turnstileToken || undefined,
+          privacyAccepted: true,
         },
       });
 
@@ -102,8 +103,8 @@ const DirectContactForm: React.FC = () => {
       {status && (
         <div
           className={`mb-6 rounded-2xl px-4 py-3 text-sm border ${status.type === 'success'
-              ? 'bg-green-50 text-green-700 border-green-100'
-              : 'bg-red-50 text-red-700 border-red-100'
+            ? 'bg-green-50 text-green-700 border-green-100'
+            : 'bg-red-50 text-red-700 border-red-100'
             }`}
         >
           {status.text}
@@ -184,8 +185,8 @@ const DirectContactForm: React.FC = () => {
             />
             <div
               className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${privacyAccepted
-                  ? 'bg-brand-pink border-brand-pink'
-                  : 'bg-white border-gray-200 group-hover:border-brand-pink/40'
+                ? 'bg-brand-pink border-brand-pink'
+                : 'bg-white border-gray-200 group-hover:border-brand-pink/40'
                 }`}
             >
               {privacyAccepted && (

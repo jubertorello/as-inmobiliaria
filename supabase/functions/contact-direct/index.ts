@@ -3,6 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const functionName = "contact-direct";
 
+const PRIVACY_POLICY_VERSION = "2026-03-02";
+
 type Body = {
   name?: string;
   phone?: string;
@@ -11,6 +13,8 @@ type Body = {
   website?: string;
   /** Cloudflare Turnstile token (optional but recommended). */
   turnstileToken?: string;
+  /** User explicitly accepted the privacy policy. */
+  privacyAccepted?: boolean;
 };
 
 const RATE_LIMIT_MAX_PER_HOUR = 5;
@@ -71,10 +75,18 @@ serve(async (req) => {
     const name = cleanSingleLine((body.name || "").trim());
     const phone = cleanSingleLine((body.phone || "").trim());
     const message = (body.message || "").trim();
+    const privacyAccepted = body.privacyAccepted === true;
 
     const validationError = validateInput({ name, phone, message });
     if (validationError) {
       return new Response(JSON.stringify({ error: validationError }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!privacyAccepted) {
+      return new Response(JSON.stringify({ error: "Privacy policy not accepted" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -201,6 +213,12 @@ serve(async (req) => {
         ip_hash: ipHash,
         origin: origin || null,
         user_agent: userAgent,
+        name,
+        phone,
+        message,
+        privacy_accepted: privacyAccepted,
+        privacy_accepted_at: new Date().toISOString(),
+        privacy_policy_version: PRIVACY_POLICY_VERSION,
         result: "failed_resend",
       });
 
@@ -210,11 +228,17 @@ serve(async (req) => {
       });
     }
 
-    // Log success (best-effort).
+    // Log success with full form data and consent record.
     await admin.from("contact_direct_submissions").insert({
       ip_hash: ipHash,
       origin: origin || null,
       user_agent: userAgent,
+      name,
+      phone,
+      message,
+      privacy_accepted: privacyAccepted,
+      privacy_accepted_at: new Date().toISOString(),
+      privacy_policy_version: PRIVACY_POLICY_VERSION,
       result: "sent",
     });
 
