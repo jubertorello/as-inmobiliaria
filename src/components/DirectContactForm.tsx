@@ -8,6 +8,7 @@ const DirectContactForm: React.FC = () => {
   const [name, setName] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [message, setMessage] = React.useState('');
+  const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
 
   // Anti-bot controls
   const [website, setWebsite] = React.useState(''); // honeypot: should stay empty
@@ -27,6 +28,11 @@ const DirectContactForm: React.FC = () => {
 
     if (!cleanName || !cleanPhone || !cleanMessage) {
       setStatus({ type: 'error', text: 'Completá nombre, teléfono y mensaje.' });
+      return;
+    }
+
+    if (!privacyAccepted) {
+      setStatus({ type: 'error', text: 'Debés aceptar la Política de Privacidad para continuar.' });
       return;
     }
 
@@ -77,6 +83,7 @@ const DirectContactForm: React.FC = () => {
       setName('');
       setPhone('');
       setMessage('');
+      setPrivacyAccepted(false);
       setWebsite('');
       setTurnstileToken('');
       setTurnstileKey((k) => k + 1);
@@ -94,11 +101,10 @@ const DirectContactForm: React.FC = () => {
 
       {status && (
         <div
-          className={`mb-6 rounded-2xl px-4 py-3 text-sm border ${
-            status.type === 'success'
+          className={`mb-6 rounded-2xl px-4 py-3 text-sm border ${status.type === 'success'
               ? 'bg-green-50 text-green-700 border-green-100'
               : 'bg-red-50 text-red-700 border-red-100'
-          }`}
+            }`}
         >
           {status.text}
         </div>
@@ -167,9 +173,46 @@ const DirectContactForm: React.FC = () => {
           </div>
         )}
 
+        {/* Privacy policy consent */}
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative flex-shrink-0 mt-0.5">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+            />
+            <div
+              className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${privacyAccepted
+                  ? 'bg-brand-pink border-brand-pink'
+                  : 'bg-white border-gray-200 group-hover:border-brand-pink/40'
+                }`}
+            >
+              {privacyAccepted && (
+                <span className="material-symbols-outlined text-white" style={{ fontSize: '14px' }}>
+                  check
+                </span>
+              )}
+            </div>
+          </div>
+          <span className="text-xs text-gray-500 leading-relaxed">
+            He leído y acepto la{' '}
+            <a
+              href="/#/privacidad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-brand-pink hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Política de Privacidad
+            </a>
+            . Entiendo que mis datos serán utilizados únicamente para responder mi consulta.
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || !privacyAccepted}
           className="w-full py-5 bg-brand-pink text-white font-bold rounded-2xl uppercase tracking-[0.2em] shadow-xl hover:bg-brand-dark transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {sending ? 'Enviando...' : 'Enviar Mensaje'}

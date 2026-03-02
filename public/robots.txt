@@ -1,0 +1,8 @@
+# robots.txt — Andrea Sartori Inmobiliaria
+User-agent: *
+Disallow: /admin
+Disallow: /login
+Disallow: /bootstrap
+Allow: /
+
+Sitemap: https://www.andreasartoriinmobiliaria.com/sitemap.xml
