@@ -16,6 +16,8 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
   const property = properties.find(p => p.id === id);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!property) {
     return (
@@ -48,6 +50,40 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
     latitude: property.latitude ?? null,
     longitude: property.longitude ?? null,
   });
+
+  const shareTitle = property.title;
+  const shareText = `Mira esta propiedad: ${property.title} en ${property.location}`;
+  const shareUrl = window.location.href;
+
+  const handleShare = async () => {
+    const shareData = {
+      title: shareTitle,
+      text: shareText,
+      url: shareUrl
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setShowShareModal(true);
+        }
+      }
+    } else {
+      setShowShareModal(true);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Error al copiar al portapapeles:', err);
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen">
@@ -165,9 +201,19 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
           </div>
 
           <div className="flex flex-col">
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="bg-brand-pinkLight/30 text-brand-pink text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-brand-pinkLight/50">{property.operation}</span>
-              <span className="bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200">{property.type}</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <span className="bg-brand-pinkLight/30 text-brand-pink text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-brand-pinkLight/50">{property.operation}</span>
+                <span className="bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200">{property.type}</span>
+              </div>
+              <button
+                onClick={handleShare}
+                className="flex items-center space-x-1.5 text-gray-400 hover:text-brand-pink transition-colors text-sm font-semibold focus:outline-none bg-gray-50 hover:bg-brand-pinkLight/20 px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-pinkLight/50"
+                title="Compartir propiedad"
+              >
+                <span className="material-symbols-outlined text-base">share</span>
+                <span className="text-[10px] uppercase tracking-wider hidden sm:inline">Compartir</span>
+              </button>
             </div>
             
             <h1 className="text-4xl md:text-5xl font-playfair text-gray-900 mb-4">{property.title}</h1>
@@ -205,19 +251,131 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
             <h3 className="text-lg font-bold text-gray-900 mb-4">Descripción</h3>
             <p className="text-gray-600 leading-relaxed mb-12 whitespace-pre-line">{property.description}</p>
 
-            <a
-              href={`https://wa.me/${contactPhoneRaw}?text=Hola, estoy interesado en la propiedad: ${property.title}`}
-              target="_blank" rel="noopener noreferrer"
-              className="w-full py-5 rounded-2xl text-white text-center font-bold uppercase tracking-[0.2em] shadow-xl bg-brand-pink hover:bg-brand-dark transition-all flex items-center justify-center space-x-3 active:scale-95"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              <span>Consultar por WhatsApp</span>
-            </a>
+            <div className="flex flex-col space-y-4">
+              <a
+                href={`https://wa.me/${contactPhoneRaw}?text=Hola, estoy interesado en la propiedad: ${property.title}`}
+                target="_blank" rel="noopener noreferrer"
+                className="w-full py-5 rounded-2xl text-white text-center font-bold uppercase tracking-[0.2em] shadow-xl bg-brand-pink hover:bg-brand-dark transition-all flex items-center justify-center space-x-3 active:scale-95"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                <span>Consultar por WhatsApp</span>
+              </a>
+
+              <button
+                onClick={handleShare}
+                className="w-full py-4 rounded-2xl border border-brand-pink text-brand-pink hover:bg-brand-pinkLight/20 transition-all flex items-center justify-center space-x-2 font-bold uppercase tracking-[0.2em] text-xs md:text-sm active:scale-95 shadow-md"
+              >
+                <span className="material-symbols-outlined text-lg">share</span>
+                <span>Compartir Propiedad</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Share Fallback Modal */}
+      {showShareModal && (
+        <div 
+          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-gray-100 relative animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button 
+              className="absolute top-4 right-4 text-gray-400 hover:text-brand-pink transition-colors p-1"
+              onClick={() => setShowShareModal(false)}
+            >
+              <span className="material-symbols-outlined text-2xl">close</span>
+            </button>
+
+            {/* Modal Title */}
+            <h3 className="text-xl font-playfair font-bold text-gray-900 mb-6 pr-6">
+              Compartir Propiedad
+            </h3>
+
+            {/* Property Preview Card inside Modal */}
+            <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100 mb-6">
+              {hasImages ? (
+                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                  <img 
+                    src={images[0]} 
+                    alt={property.title} 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300 flex-shrink-0">
+                  <span className="material-symbols-outlined text-2xl">image</span>
+                </div>
+              )}
+              <div className="min-w-0 flex-grow">
+                <h4 className="text-sm font-bold text-gray-900 truncate">{property.title}</h4>
+                <p className="text-xs text-gray-500 truncate flex items-center mt-0.5">
+                  <span className="material-symbols-outlined text-xs text-brand-pink mr-1">location_on</span>
+                  {property.location}
+                </p>
+                <p className="text-sm font-semibold text-brand-pink mt-1">
+                  {property.price && property.price > 0 ? `${property.currency} ${property.price.toLocaleString()}` : 'Consultar'}
+                </p>
+              </div>
+            </div>
+
+            {/* Share Options */}
+            <div className="space-y-3">
+              {/* Copy Link */}
+              <button 
+                onClick={copyToClipboard}
+                className={`w-full py-3.5 px-4 rounded-xl border flex items-center justify-between font-semibold transition-all ${
+                  copied 
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                    : 'bg-white border-gray-200 hover:border-brand-pink hover:text-brand-pink text-gray-700'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="material-symbols-outlined text-xl">{copied ? 'check_circle' : 'link'}</span>
+                  <span>{copied ? '¡Enlace copiado!' : 'Copiar enlace'}</span>
+                </div>
+                {!copied && (
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Copiar</span>
+                )}
+              </button>
+
+              {/* WhatsApp Share */}
+              <a 
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent('Mira esta propiedad: ' + property.title + ' ' + shareUrl)}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 rounded-xl border border-gray-200 bg-white hover:border-brand-pink hover:text-brand-pink text-gray-700 font-semibold transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-[#25D366] fill-currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  </svg>
+                  <span>Compartir por WhatsApp</span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Enviar</span>
+              </a>
+
+              {/* Email Share */}
+              <a 
+                href={`mailto:?subject=${encodeURIComponent(property.title)}&body=${encodeURIComponent('Mira esta propiedad en Andrea Sartori Inmobiliaria: ' + shareUrl)}`}
+                className="w-full py-3.5 px-4 rounded-xl border border-gray-200 bg-white hover:border-brand-pink hover:text-brand-pink text-gray-700 font-semibold transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="material-symbols-outlined text-xl text-gray-500">mail</span>
+                  <span>Compartir por Email</span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Email</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
