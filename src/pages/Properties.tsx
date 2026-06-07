@@ -33,9 +33,7 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
   const [content, setContent] = useState<LandingContent | null>(null);
 
   const [cameFromDetail] = useState(() => {
-    const val = sessionStorage.getItem('from_detail_page') === 'true';
-    sessionStorage.removeItem('from_detail_page');
-    return val;
+    return sessionStorage.getItem('from_detail_page') === 'true';
   });
   const [hasRestoredScroll, setHasRestoredScroll] = useState(false);
 
@@ -108,6 +106,7 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
           if (Math.abs(window.scrollY - targetY) < 10 || attempts >= maxAttempts) {
             clearInterval(scrollInterval);
             setHasRestoredScroll(true);
+            sessionStorage.removeItem('from_detail_page');
             console.log('[ScrollRestoration] Completed at scrollY =', window.scrollY);
           }
         }, 50);
@@ -115,11 +114,14 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
         return () => clearInterval(scrollInterval);
       } else if (!savedScrollY || filtered.length === 0) {
         setHasRestoredScroll(true);
+        sessionStorage.removeItem('from_detail_page');
       }
     } else {
       // Not coming from detail view, clean up scroll position
       sessionStorage.removeItem('prop_scroll_y');
+      sessionStorage.removeItem('from_detail_page');
       setHasRestoredScroll(true);
+      window.scrollTo(0, 0);
     }
   }, [filtered, hasRestoredScroll, cameFromDetail, content]);
 
