@@ -12,17 +12,48 @@ interface PropertiesProps {
 }
 
 const Properties: React.FC<PropertiesProps> = ({ properties }) => {
-  const [filterType, setFilterType] = useState<PropertyType | 'All'>('All');
-  const [filterOp, setFilterOp] = useState<OperationType | 'All'>('All');
-  const [search, setSearch] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [filterCurrency, setFilterCurrency] = useState<'USD' | 'ARS' | 'All'>('All');
+  const [filterType, setFilterType] = useState<PropertyType | 'All'>(() => {
+    return (sessionStorage.getItem('prop_filter_type') as PropertyType | 'All') || 'All';
+  });
+  const [filterOp, setFilterOp] = useState<OperationType | 'All'>(() => {
+    return (sessionStorage.getItem('prop_filter_op') as OperationType | 'All') || 'All';
+  });
+  const [search, setSearch] = useState(() => {
+    return sessionStorage.getItem('prop_search') || '';
+  });
+  const [minPrice, setMinPrice] = useState(() => {
+    return sessionStorage.getItem('prop_min_price') || '';
+  });
+  const [maxPrice, setMaxPrice] = useState(() => {
+    return sessionStorage.getItem('prop_max_price') || '';
+  });
+  const [filterCurrency, setFilterCurrency] = useState<'USD' | 'ARS' | 'All'>(() => {
+    return (sessionStorage.getItem('prop_filter_currency') as 'USD' | 'ARS' | 'All') || 'All';
+  });
   const [content, setContent] = useState<LandingContent | null>(null);
+
+  const [cameFromDetail] = useState(() => {
+    const val = sessionStorage.getItem('from_detail_page') === 'true';
+    sessionStorage.removeItem('from_detail_page');
+    return val;
+  });
+  const [hasRestoredScroll, setHasRestoredScroll] = useState(false);
 
   useEffect(() => {
     apiService.getLandingContent().then(setContent);
   }, []);
+
+  // Save filter changes to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('prop_filter_type', filterType);
+    sessionStorage.setItem('prop_filter_op', filterOp);
+    sessionStorage.setItem('prop_search', search);
+    sessionStorage.setItem('prop_min_price', minPrice);
+    sessionStorage.setItem('prop_max_price', maxPrice);
+    sessionStorage.setItem('prop_filter_currency', filterCurrency);
+  }, [filterType, filterOp, search, minPrice, maxPrice, filterCurrency]);
+
+  // Scroll position is now saved explicitly in PropertyCard before navigation
 
   const filtered = useMemo(() => {
     return properties.filter(p => {
@@ -56,6 +87,41 @@ const Properties: React.FC<PropertiesProps> = ({ properties }) => {
       return matchType && matchOp && matchSearch && matchCurrency && matchPrice;
     });
   }, [properties, filterType, filterOp, search, minPrice, maxPrice, filterCurrency]);
+
+  // Restore scroll position if returning from a detail view
+  useEffect(() => {
+    if (!content) return; // Wait until content (and thus the full DOM layout) is rendered
+
+    if (cameFromDetail) {
+      const savedScrollY = sessionStorage.getItem('prop_scroll_y');
+      console.log('[ScrollRestoration] cameFromDetail = true, savedScrollY =', savedScrollY);
+      if (savedScrollY && filtered.length > 0 && !hasRestoredScroll) {
+        const targetY = parseInt(savedScrollY, 10);
+        let attempts = 0;
+        const maxAttempts = 15;
+        
+        const scrollInterval = setInterval(() => {
+          window.scrollTo(0, targetY);
+          attempts++;
+          console.log(`[ScrollRestoration] Attempt ${attempts}: target = ${targetY}, current = ${window.scrollY}`);
+          
+          if (Math.abs(window.scrollY - targetY) < 10 || attempts >= maxAttempts) {
+            clearInterval(scrollInterval);
+            setHasRestoredScroll(true);
+            console.log('[ScrollRestoration] Completed at scrollY =', window.scrollY);
+          }
+        }, 50);
+
+        return () => clearInterval(scrollInterval);
+      } else if (!savedScrollY || filtered.length === 0) {
+        setHasRestoredScroll(true);
+      }
+    } else {
+      // Not coming from detail view, clean up scroll position
+      sessionStorage.removeItem('prop_scroll_y');
+      setHasRestoredScroll(true);
+    }
+  }, [filtered, hasRestoredScroll, cameFromDetail, content]);
 
   // Preload first 3 images for faster initial render
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { LandingContent, Property } from '../types/types';
 import SEO from '../components/SEO';
@@ -18,6 +18,10 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Swipe gesture tracking for mobile UX
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   if (!property) {
     return (
@@ -40,6 +44,58 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
     e.stopPropagation();
     setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  // Touch handlers for mobile swiping
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setIsSwiping(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const diff = Math.abs(e.targetTouches[0].clientX - touchStartX);
+    if (diff > 10) {
+      setIsSwiping(true);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX - touchEndX;
+    const swipeThreshold = 50;
+
+    if (distance > swipeThreshold) {
+      // Swiped left -> next
+      setActiveImageIndex((prev) => (prev + 1) % images.length);
+    } else if (distance < -swipeThreshold) {
+      // Swiped right -> prev
+      setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+    setTouchStartX(null);
+  };
+
+  // Center active thumbnail horizontally when image index changes
+  useEffect(() => {
+    if (!hasImages) return;
+    const activeThumb = document.getElementById(`thumb-${activeImageIndex}`);
+    const track = document.getElementById('thumbnail-track');
+    if (activeThumb && track) {
+      const trackWidth = track.clientWidth;
+      const thumbWidth = activeThumb.clientWidth;
+      const thumbLeft = activeThumb.offsetLeft;
+
+      track.scrollTo({
+        left: thumbLeft - (trackWidth / 2) + (thumbWidth / 2),
+        behavior: 'smooth'
+      });
+    }
+  }, [activeImageIndex, hasImages]);
+
+  // Set flag to indicate we came from the detail page when navigating back
+  useEffect(() => {
+    sessionStorage.setItem('from_detail_page', 'true');
+  }, []);
 
   const seoTitle = `${property.title} | ${property.operation} en ${property.location} - Andrea Sartori`;
   const seoDescription = `${property.operation} de ${property.type.toLowerCase()} en ${property.location}. ${property.area}m². ${property.description.substring(0, 100)}...`;
@@ -87,7 +143,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
 
   return (
     <div className="bg-white min-h-screen">
-      <SEO 
+      <SEO
         title={seoTitle}
         description={seoDescription}
         image={images[0]}
@@ -96,11 +152,11 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
 
       {/* Fullscreen Modal */}
       {showFullscreen && hasImages && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-10 transition-all cursor-default"
           onClick={() => setShowFullscreen(false)}
         >
-          <button 
+          <button
             className="absolute top-6 right-6 text-white hover:text-brand-pink transition-colors z-10 flex items-center justify-center"
             onClick={() => setShowFullscreen(false)}
           >
@@ -142,9 +198,16 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Gallery Section */}
           <div className="space-y-6">
-            <div 
+            <div
               className={`relative rounded-3xl overflow-hidden shadow-2xl h-[400px] md:h-[550px] bg-gray-50 flex items-center justify-center border border-gray-100 ${hasImages ? 'cursor-zoom-in group' : ''}`}
-              onClick={() => hasImages && setShowFullscreen(true)}
+              onClick={() => {
+                if (hasImages && !isSwiping) {
+                  setShowFullscreen(true);
+                }
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               {hasImages ? (
                 <>
@@ -176,26 +239,58 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
                 </div>
               )}
             </div>
-            
+
             {hasImages && images.length > 1 && (
-              <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
-                {images.map((img, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative rounded-xl overflow-hidden aspect-square border-2 transition-all bg-gray-50 ${
-                      activeImageIndex === idx ? 'border-brand-pink ring-2 ring-brand-pinkLight scale-105 z-10' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <LazyImage
-                      src={img}
-                      alt={`Vista ${idx + 1}`}
-                      loading="lazy"
-                      className="absolute inset-0"
-                      imgClassName="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+              <div className="relative group/thumbs px-1">
+                <div
+                  id="thumbnail-track"
+                  className="flex gap-3 overflow-x-auto py-3 px-1 scroll-smooth no-scrollbar"
+                >
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      id={`thumb-${idx}`}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative rounded-2xl overflow-hidden aspect-square w-20 md:w-24 flex-shrink-0 border-2 transition-all duration-300 bg-gray-50 ${activeImageIndex === idx
+                        ? 'border-brand-pink ring-4 ring-brand-pinkLight/50 scale-105 z-10'
+                        : 'border-transparent opacity-60 hover:opacity-100 hover:scale-[1.02]'
+                        }`}
+                    >
+                      <LazyImage
+                        src={img}
+                        alt={`Vista ${idx + 1}`}
+                        loading="lazy"
+                        className="absolute inset-0"
+                        imgClassName="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Horizontal scroll indicators/controls on hover for desktop */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById('thumbnail-track');
+                    if (el) el.scrollLeft -= 180;
+                  }}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/95 hover:bg-white text-gray-900 rounded-full shadow-lg border border-gray-100 backdrop-blur-md opacity-0 group-hover/thumbs:opacity-100 transition-all duration-300 hidden md:flex items-center justify-center z-20 cursor-pointer active:scale-90"
+                  title="Anterior"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_left</span>
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById('thumbnail-track');
+                    if (el) el.scrollLeft += 180;
+                  }}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/95 hover:bg-white text-gray-900 rounded-full shadow-lg border border-gray-100 backdrop-blur-md opacity-0 group-hover/thumbs:opacity-100 transition-all duration-300 hidden md:flex items-center justify-center z-20 cursor-pointer active:scale-90"
+                  title="Siguiente"
+                >
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
+                </button>
               </div>
             )}
           </div>
@@ -215,7 +310,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
                 <span className="text-[10px] uppercase tracking-wider hidden sm:inline">Compartir</span>
               </button>
             </div>
-            
+
             <h1 className="text-4xl md:text-5xl font-playfair text-gray-900 mb-4">{property.title}</h1>
 
             <a
@@ -258,9 +353,9 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
                 className="w-full py-5 rounded-2xl text-white text-center font-bold uppercase tracking-[0.2em] shadow-xl bg-brand-pink hover:bg-brand-dark transition-all flex items-center justify-center space-x-3 active:scale-95"
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                 </svg>
-                <span>Consultar por WhatsApp</span>
+                <span>Consultar</span>
               </a>
 
               <button
@@ -277,16 +372,16 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
 
       {/* Share Fallback Modal */}
       {showShareModal && (
-        <div 
+        <div
           className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setShowShareModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-gray-100 relative animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
-            <button 
+            <button
               className="absolute top-4 right-4 text-gray-400 hover:text-brand-pink transition-colors p-1"
               onClick={() => setShowShareModal(false)}
             >
@@ -302,10 +397,10 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
             <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100 mb-6">
               {hasImages ? (
                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
-                  <img 
-                    src={images[0]} 
-                    alt={property.title} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={images[0]}
+                    alt={property.title}
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ) : (
@@ -328,13 +423,12 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
             {/* Share Options */}
             <div className="space-y-3">
               {/* Copy Link */}
-              <button 
+              <button
                 onClick={copyToClipboard}
-                className={`w-full py-3.5 px-4 rounded-xl border flex items-center justify-between font-semibold transition-all ${
-                  copied 
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-                    : 'bg-white border-gray-200 hover:border-brand-pink hover:text-brand-pink text-gray-700'
-                }`}
+                className={`w-full py-3.5 px-4 rounded-xl border flex items-center justify-between font-semibold transition-all ${copied
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-white border-gray-200 hover:border-brand-pink hover:text-brand-pink text-gray-700'
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   <span className="material-symbols-outlined text-xl">{copied ? 'check_circle' : 'link'}</span>
@@ -346,15 +440,15 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
               </button>
 
               {/* WhatsApp Share */}
-              <a 
+              <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent('Mira esta propiedad: ' + property.title + ' ' + shareUrl)}`}
-                target="_blank" 
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 rounded-xl border border-gray-200 bg-white hover:border-brand-pink hover:text-brand-pink text-gray-700 font-semibold transition-all flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
                   <svg className="w-5 h-5 text-[#25D366] fill-currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                   </svg>
                   <span>Compartir por WhatsApp</span>
                 </div>
@@ -362,7 +456,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
               </a>
 
               {/* Email Share */}
-              <a 
+              <a
                 href={`mailto:?subject=${encodeURIComponent(property.title)}&body=${encodeURIComponent('Mira esta propiedad en Andrea Sartori Inmobiliaria: ' + shareUrl)}`}
                 className="w-full py-3.5 px-4 rounded-xl border border-gray-200 bg-white hover:border-brand-pink hover:text-brand-pink text-gray-700 font-semibold transition-all flex items-center justify-between"
               >

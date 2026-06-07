@@ -43,12 +43,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">
-      <div className="relative h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50">
+      <Link 
+        to={`/propiedad/${property.id}`}
+        onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
+        className="relative block w-full h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50 cursor-pointer"
+      >
         {hasImages ? (
           <LazyImage
             src={imageUrl}
             alt={property.title}
-            className="absolute inset-0"
+            className="absolute inset-0 w-full h-full"
             imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="eager"
           />
@@ -65,12 +69,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm border border-gray-100">
           {property.type}
         </div>
-      </div>
+      </Link>
 
       <div className="p-6 flex flex-col flex-grow">
-        <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-brand-pink transition-colors">
-          {property.title}
-        </h3>
+        <Link 
+          to={`/propiedad/${property.id}`}
+          onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
+        >
+          <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-brand-pink transition-colors">
+            {property.title}
+          </h3>
+        </Link>
 
         <a
           href={mapsUrl}
@@ -105,6 +114,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           </div>
           <Link
             to={`/propiedad/${property.id}`}
+            onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
             className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors flex items-center group/btn"
           >
             Detalles

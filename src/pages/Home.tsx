@@ -120,12 +120,12 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
               const sDesc = (content as any)[`service${num}Desc`];
               const sIcon = (content as any)[`service${num}Icon`];
               return (
-                <div key={num} className="p-10 rounded-3xl bg-gray-50/50 hover:bg-white border border-transparent hover:border-brand-pinkLight/30 hover:shadow-2xl hover:shadow-brand-pinkLight/20 transition-all group">
-                  <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-brand-pink transition-all">
-                    <span className="material-symbols-outlined text-4xl text-brand-pink group-hover:text-white transition-colors">{sIcon}</span>
+                <div key={num} className="p-10 rounded-3xl bg-brand-dark text-white border border-transparent shadow-xl hover:shadow-2xl hover:bg-brand-pink transition-all duration-300 group">
+                  <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-8 group-hover:scale-110 transition-all">
+                    <span className="material-symbols-outlined text-4xl text-brand-pink group-hover:text-brand-dark transition-colors">{sIcon}</span>
                   </div>
-                  <h3 className="text-2xl font-playfair font-bold mb-4 text-gray-800">{sTitle}</h3>
-                  <p className="text-gray-600 leading-relaxed text-sm">
+                  <h3 className="text-2xl font-playfair font-bold mb-4 text-white">{sTitle}</h3>
+                  <p className="text-white/85 leading-relaxed text-sm">
                     {sDesc}
                   </p>
                   {num === 3 && content.apartHotelLink && (
@@ -133,7 +133,7 @@ const Home: React.FC<HomeProps> = ({ properties, content }) => {
                       href={content.apartHotelLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-6 inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-brand-pink hover:underline"
+                      className="mt-6 inline-flex items-center text-[10px] font-bold uppercase tracking-widest text-white hover:underline"
                     >
                       Visitar Apart Hotel
                       <span className="material-symbols-outlined ml-2 text-sm">open_in_new</span>

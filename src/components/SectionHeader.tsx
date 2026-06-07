@@ -10,7 +10,7 @@ interface SectionHeaderProps {
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle, light = false, centered = true }) => {
   return (
-    <div className={`mb-16 ${centered ? 'text-center' : 'text-left'}`}>
+    <div className={`mb-6 ${centered ? 'text-center' : 'text-left'}`}>
       <h2 className={`text-3xl md:text-5xl font-playfair mb-4 ${light ? 'text-white' : 'text-brand-dark'}`}>
         {title}
       </h2>

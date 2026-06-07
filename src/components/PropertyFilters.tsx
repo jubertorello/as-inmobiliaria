@@ -21,9 +21,66 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
   search, setSearch, filterType, setFilterType, filterOp, setFilterOp,
   minPrice, setMinPrice, maxPrice, setMaxPrice, filterCurrency, setFilterCurrency
 }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleReset = () => {
+    setSearch(''); setFilterType('All'); setFilterOp('All');
+    setMinPrice(''); setMaxPrice(''); setFilterCurrency('All');
+  };
+
+  const activeFilters: string[] = [];
+  if (search) activeFilters.push(`"${search}"`);
+  if (filterType !== 'All') activeFilters.push(filterType);
+  if (filterOp !== 'All') activeFilters.push(filterOp);
+  if (filterCurrency !== 'All') activeFilters.push(filterCurrency);
+  if (minPrice || maxPrice) {
+    if (minPrice && maxPrice) activeFilters.push(`${minPrice} - ${maxPrice}`);
+    else if (minPrice) activeFilters.push(`Desde ${minPrice}`);
+    else if (maxPrice) activeFilters.push(`Hasta ${maxPrice}`);
+  }
+
   return (
     <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 mb-12">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Mobile Toggle Button */}
+      <div className="md:hidden flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-900 flex items-center gap-2">
+          Filtros de Búsqueda
+          {activeFilters.length > 0 && (
+            <span className="bg-brand-pink text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {activeFilters.length}
+            </span>
+          )}
+        </h3>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 text-brand-pink font-bold text-sm bg-brand-pink/10 px-4 py-2 rounded-xl"
+        >
+          <span className="material-symbols-outlined text-[20px]">{isOpen ? 'close' : 'tune'}</span>
+          {isOpen ? 'Ocultar' : 'Filtros'}
+        </button>
+      </div>
+
+      {/* Mobile Active Filters Summary (Visible only when collapsed) */}
+      {!isOpen && activeFilters.length > 0 && (
+        <div className="md:hidden flex flex-col gap-3 mb-4 pt-3 border-t border-gray-100">
+          <div className="flex flex-wrap gap-2">
+            {activeFilters.map((filter, idx) => (
+              <span key={idx} className="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-200">
+                {filter}
+              </span>
+            ))}
+          </div>
+          <button 
+            onClick={handleReset}
+            className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-brand-pink self-start flex items-center mt-1"
+          >
+            <span className="material-symbols-outlined text-[14px] mr-1">delete</span>
+            Reiniciar Filtros
+          </button>
+        </div>
+      )}
+
+      <div className={`${isOpen ? 'grid' : 'hidden md:grid'} grid-cols-1 md:grid-cols-4 gap-6`}>
         {/* Barra de Búsqueda Principal */}
         <div className="md:col-span-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2 ml-1">Búsqueda Global</label>
@@ -118,10 +175,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
 
           <div className="flex items-end pb-1">
             <button
-              onClick={() => {
-                setSearch(''); setFilterType('All'); setFilterOp('All');
-                setMinPrice(''); setMaxPrice(''); setFilterCurrency('All');
-              }}
+              onClick={handleReset}
               className="w-full py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors border border-dashed border-gray-200 rounded-2xl"
             >
               Reiniciar Filtros
