@@ -31,25 +31,25 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
       <div className="w-full px-4 sm:px-8">
         <div className="flex justify-between h-24">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-2 md:space-x-4">
               <div className="flex-shrink-0">
                 {content.navbarLogo ? (
-                  <img src={content.navbarLogo} alt="Logo" className="h-16 w-auto object-contain" />
+                  <img src={content.navbarLogo} alt="Logo" className="h-10 md:h-16 w-auto object-contain transition-all" />
                 ) : (
-                  <svg 
-                    className="h-12 w-auto" 
-                    viewBox="0 0 84 75" 
-                    fill="none" 
+                  <svg
+                    className="h-8 md:h-12 w-auto transition-all"
+                    viewBox="0 0 84 75"
+                    fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <defs>
                       <linearGradient id="gLeft" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#D95FA2" /> 
-                        <stop offset="100%" stopColor="#D979AE" /> 
+                        <stop offset="0%" stopColor="#D95FA2" />
+                        <stop offset="100%" stopColor="#D979AE" />
                       </linearGradient>
                       <linearGradient id="gMidLeft" x1="0" y1="0" x2="1" y2="1">
-                         <stop offset="0%" stopColor="#D979AE" />
-                         <stop offset="100%" stopColor="#532759" />
+                        <stop offset="0%" stopColor="#D979AE" />
+                        <stop offset="100%" stopColor="#532759" />
                       </linearGradient>
                       <linearGradient id="gMidRight" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#FFFFFF" />
@@ -67,13 +67,13 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
                   </svg>
                 )}
               </div>
-              
-              <div className="flex flex-col border-l border-gray-100 pl-4 h-12 justify-center">
-                <h1 className="text-2xl font-normal tracking-[0.1em] text-gray-700 leading-none mb-1">
+
+              <div className="flex flex-col border-l border-gray-100 pl-3 md:pl-4 h-10 md:h-12 justify-center transition-all">
+                <h1 className="text-lg md:text-2xl font-normal tracking-[0.1em] text-gray-700 leading-none mb-0.5 md:mb-1 transition-all">
                   ANDREA <span className="font-semibold text-gray-800">SARTORI</span>
                 </h1>
-                <p 
-                  className="text-[10px] uppercase tracking-[0.4em] font-medium leading-none"
+                <p
+                  className="text-[7px] md:text-[10px] uppercase tracking-[0.4em] font-medium leading-none transition-all"
                   style={{ color: SECONDARY_COLOR }}
                 >
                   {content.siteTagline}
@@ -87,22 +87,20 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-bold uppercase tracking-[0.15em] transition-all hover:text-brand-pink ${
-                  location.pathname === link.path ? 'text-brand-pink border-b-2 border-brand-pink pb-1' : 'text-gray-400'
-                }`}
+                className={`text-sm font-bold uppercase tracking-[0.15em] transition-all hover:text-brand-pink ${location.pathname === link.path ? 'text-brand-pink border-b-2 border-brand-pink pb-1' : 'text-gray-400'
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
-            
+
             {isAdmin ? (
               <>
                 <Link
                   to="/admin"
                   title="Panel Administrativo"
-                  className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${
-                    location.pathname === '/admin' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
-                  }`}
+                  className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${location.pathname === '/admin' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
+                    }`}
                 >
                   <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
                 </Link>
@@ -113,17 +111,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
                   Salir
                 </button>
               </>
-            ) : (
-              <Link
-                to="/login"
-                title="Iniciar Sesión"
-                className={`p-2 rounded-full transition-all hover:bg-gray-50 flex items-center justify-center ${
-                  location.pathname === '/login' ? 'text-brand-pink' : 'text-gray-400 hover:text-brand-pink'
-                }`}
-              >
-                <span className="material-symbols-outlined text-2xl">person</span>
-              </Link>
-            )}
+            ) : null}
           </div>
 
           <div className="md:hidden flex items-center">
@@ -147,9 +135,8 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`block px-3 py-4 text-base font-bold uppercase tracking-widest border-b border-gray-50 last:border-none ${
-                  location.pathname === link.path ? 'text-brand-pink' : 'text-gray-600'
-                }`}
+                className={`block px-3 py-4 text-base font-bold uppercase tracking-widest border-b border-gray-50 last:border-none ${location.pathname === link.path ? 'text-brand-pink' : 'text-gray-600'
+                  }`}
               >
                 {link.name}
               </Link>
@@ -171,16 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAdmin, content }) => {
                   Salir
                 </button>
               </>
-            ) : (
-              <Link
-                to="/login"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-3 px-3 py-4 text-base font-bold uppercase tracking-widest text-gray-600 border-b border-gray-50 last:border-none"
-              >
-                <span className="material-symbols-outlined text-2xl text-gray-400">person</span>
-                <span>Iniciar Sesión</span>
-              </Link>
-            )}
+            ) : null}
           </div>
         </div>
       )}
