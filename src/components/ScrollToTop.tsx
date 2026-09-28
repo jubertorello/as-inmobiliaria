@@ -6,6 +6,13 @@ const ScrollToTop = () => {
     const action = useNavigationType();
 
     useEffect(() => {
+        // Leaving the catalogue/detail flow for any other page discards the saved
+        // position, so the catalogue opens at the top when reached from elsewhere.
+        if (pathname !== '/propiedades' && !pathname.startsWith('/propiedad/')) {
+            sessionStorage.removeItem('prop_scroll_y');
+            sessionStorage.removeItem('from_detail_page');
+        }
+
         // Skip scroll to top if returning to properties page from a detail page
         if (pathname === '/propiedades' && sessionStorage.getItem('from_detail_page') === 'true') {
             return;

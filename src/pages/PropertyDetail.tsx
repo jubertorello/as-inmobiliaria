@@ -92,11 +92,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
     }
   }, [activeImageIndex, hasImages]);
 
-  // Set flag to indicate we came from the detail page when navigating back
-  useEffect(() => {
-    sessionStorage.setItem('from_detail_page', 'true');
-  }, []);
-
   const seoTitle = `${property.title} | ${property.operation} en ${property.location} - Andrea Sartori`;
   const seoDescription = `${property.operation} de ${property.type.toLowerCase()} en ${property.location}. ${property.area}m². ${property.description.substring(0, 100)}...`;
 
@@ -251,7 +246,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ properties, content }) 
                       key={idx}
                       id={`thumb-${idx}`}
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`relative rounded-2xl overflow-hidden aspect-square w-20 md:w-24 flex-shrink-0 border-2 transition-all duration-300 bg-gray-50 ${activeImageIndex === idx
+                      className={`relative rounded-2xl overflow-hidden w-20 h-20 md:w-24 md:h-24 flex-shrink-0 self-start border-2 transition-all duration-300 bg-gray-50 ${activeImageIndex === idx
                         ? 'border-brand-pink ring-4 ring-brand-pinkLight/50 scale-105 z-10'
                         : 'border-transparent opacity-60 hover:opacity-100 hover:scale-[1.02]'
                         }`}

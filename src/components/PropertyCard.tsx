@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Property, OperationType } from '../types/types';
 import { googleMapsUrlFromCoordsOrQuery } from '../utils/googleMaps';
 import LazyImage from './LazyImage';
@@ -9,6 +9,21 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+  const { pathname } = useLocation();
+
+  // Only remember the scroll position when leaving the catalogue itself, so that
+  // coming back from a detail page restores it. From anywhere else (home, etc.)
+  // the catalogue must open at the top.
+  const rememberScroll = () => {
+    if (pathname === '/propiedades') {
+      sessionStorage.setItem('prop_scroll_y', window.scrollY.toString());
+      sessionStorage.setItem('from_detail_page', 'true');
+    } else {
+      sessionStorage.removeItem('prop_scroll_y');
+      sessionStorage.removeItem('from_detail_page');
+    }
+  };
+
   const firstImage = React.useMemo(() => {
     return property.images?.find(img => typeof img === 'string' && img.trim() !== '');
   }, [property.images]);
@@ -45,7 +60,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl group flex flex-col h-full">
       <Link 
         to={`/propiedad/${property.id}`}
-        onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
+        onClick={rememberScroll}
         className="relative block w-full h-64 overflow-hidden bg-gray-50 flex items-center justify-center border-b border-gray-50 cursor-pointer"
       >
         {hasImages ? (
@@ -74,7 +89,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       <div className="p-6 flex flex-col flex-grow">
         <Link 
           to={`/propiedad/${property.id}`}
-          onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
+          onClick={rememberScroll}
         >
           <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-brand-pink transition-colors">
             {property.title}
@@ -114,7 +129,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           </div>
           <Link
             to={`/propiedad/${property.id}`}
-            onClick={() => sessionStorage.setItem('prop_scroll_y', window.scrollY.toString())}
+            onClick={rememberScroll}
             className="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors flex items-center group/btn"
           >
             Detalles

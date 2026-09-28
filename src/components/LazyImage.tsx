@@ -106,8 +106,13 @@ const LazyImage: React.FC<Props> = ({
 
   const showImg = Boolean(currentSrc) && !error;
 
+  // Only position the wrapper ourselves if the caller didn't: otherwise Tailwind's
+  // `.relative` rule wins over the `absolute inset-0` passed in, the wrapper collapses
+  // to auto height and the inner `h-full` image falls back to its natural size.
+  const hasPosition = /(^|\s)(absolute|fixed|sticky|relative)(\s|$)/.test(className || '');
+
   return (
-    <div className={`relative overflow-hidden ${className || ''}`}>
+    <div className={`${hasPosition ? '' : 'relative'} overflow-hidden ${className || ''}`}>
       {!loaded && !error && (
         <div className="absolute inset-0 bg-gray-50 flex items-center justify-center z-10">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-brand-pink rounded-full animate-spin" />
